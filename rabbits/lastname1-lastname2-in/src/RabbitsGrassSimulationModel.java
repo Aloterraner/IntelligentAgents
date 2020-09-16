@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import uchicago.src.sim.engine.BasicAction;
 import uchicago.src.sim.engine.Schedule;
 import uchicago.src.sim.engine.SimModelImpl;
+import uchicago.src.sim.event.SliderListener;
 import uchicago.src.sim.engine.SimInit;
 import uchicago.src.sim.gui.DisplaySurface;
 import uchicago.src.sim.gui.ColorMap;
@@ -33,6 +34,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 	  	private static final int GRASSGROWTHRATE = 50;
 	  	private static final int FERTILITY = 1; 
 	  	private static final int STARTINGENERGY = 15; 
+	  	private static final float NOURISHMENT = 1;
 	  	
 		private Schedule schedule;
 		private DisplaySurface displaySurface; 
@@ -49,6 +51,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		private int BirthThreshold = BIRTHTHRESHOLD;
 		private int GrassGrowthRate = GRASSGROWTHRATE;
 		private int Fertility = FERTILITY;
+		private float Nourishment = NOURISHMENT; 
 		
 		public static void main(String[] args) {
 			
@@ -66,10 +69,16 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		
 		public void setup() {
 			System.out.println("Setting up ...");
+			
+			this.getModelManipulator().addSlider("Grass Growth Rate", 0, 100, 10, new GrassGrowthIncrementer());
+			this.getModelManipulator().addSlider("Inital Number of Rabbits", 0, 100, 10, new InitRabbitsIncrementer());
+			this.getModelManipulator().addSlider("Inital Amount of Grass", 0, 100, 10, new InitGrassIncrementer());
+			this.getModelManipulator().addSlider("GridSize", 0, 100, 10, new GridSizeIncrementer());
+			
 			rgSpace = null; 
 			agentList = new ArrayList<RabbitsGrassSimulationAgent>();
 			schedule = new Schedule(1);
-			
+			boolean restart = false; 
 			
 			if (displaySurface != null){
 			    displaySurface.dispose();
@@ -79,6 +88,8 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 			displaySurface = new DisplaySurface(this, "Alice 1"); 
 			registerDisplaySurface("Alice 1", displaySurface);
 			
+			
+
 		}
 
 		
@@ -92,6 +103,8 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		    
 		    
 		    displaySurface.display();
+		    
+		    
 			
 		}
 
@@ -141,8 +154,10 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 			          RabbitsGrassSimulationAgent rab = (RabbitsGrassSimulationAgent)agentList.get(i);
 			          rab.step();
 			        }
+			         
 			        
 			        reapDeadAgents(); 
+			        birthNewAgents();
 			        
 			        rgSpace.growGrass(GrassGrowthRate);
 			        
@@ -162,10 +177,22 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 			// TODO Auto-generated method stub
 			// Parameters to be set by users via the Repast UI slider bar
 			// Do "not" modify the parameters names provided in the skeleton code, you can add more if you want 
-			String[] params = { "GridSize", "NumInitRabbits", "NumInitGrass", "GrassGrowthRate", "BirthThreshold","Fertility"};
+			String[] params = { "GridSize", "NumInitRabbits", "NumInitGrass", "GrassGrowthRate", "BirthThreshold","Fertility","Nourishment"};
 			return params;
 		}
 
+		private void birthNewAgents() {
+			for(int i = (agentList.size() - 1); i >= 0 ; i--){
+			      RabbitsGrassSimulationAgent rab = (RabbitsGrassSimulationAgent)agentList.get(i);
+			      if(rab.getEnergy() > BirthThreshold){
+			        rab.setEnergy(rab.getEnergy()-BirthThreshold);
+			        RabbitsGrassSimulationAgent a = new RabbitsGrassSimulationAgent(startingEnergy);
+			        a.setModel(this);
+					agentList.add(a);
+					rgSpace.addAgent(a); 
+			      }
+		}
+		}
 		
 		private void reapDeadAgents(){
 		    for(int i = (agentList.size() - 1); i >= 0 ; i--){
@@ -199,6 +226,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		
 		private void addNewAgent(){
 			RabbitsGrassSimulationAgent a = new RabbitsGrassSimulationAgent(startingEnergy);
+			a.setModel(this);
 			agentList.add(a);
 			rgSpace.addAgent(a); 
 		}
@@ -242,8 +270,63 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		public void setStartingEnergy(int startingEnergy) {
 			this.startingEnergy = startingEnergy;
 		}
+
+		public float getNourishment() {
+			return Nourishment;
+		}
+
+		public void setNourishment(float nourishment) {
+			Nourishment = nourishment;
+		}
+
+		public int getFertility() {
+			return Fertility;
+		}
+
+		public void setFertility(int fertility) {
+			Fertility = fertility;
+		}
 		
-		
+		class GrassGrowthIncrementer extends SliderListener {
+			  public void execute() {
+			    if (isSlidingLeft) {
+			      GrassGrowthRate -= value;
+			    } else {
+			      GrassGrowthRate += value;
+			    }
+			  }
+			};
+		class InitRabbitsIncrementer extends SliderListener {
+			  public void execute() {
+				if (isSlidingLeft) {
+				  NumInitRabbits -= value;
+				} else {
+				  NumInitRabbits += value;
+				}
+			   }
+	     };
+	     
+	     class InitGrassIncrementer extends SliderListener {
+			  public void execute() {
+				if (isSlidingLeft) {
+				  NumInitGrass -= value;
+				} else {
+				  NumInitGrass += value;
+				}
+			   }
+	     };
+	     
+	     class GridSizeIncrementer extends SliderListener {
+			  public void execute() {
+				if (isSlidingLeft) {
+				  GridSize -= value;
+				} else {
+				  GridSize += value;
+				}
+			   }
+	     };
+			
+
 		
 		
 }

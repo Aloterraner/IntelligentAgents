@@ -15,6 +15,7 @@ import uchicago.src.sim.gui.SimGraphics;
  */
 
 public class RabbitsGrassSimulationAgent implements Drawable {
+	  private RabbitsGrassSimulationModel model; 
 	  private int X;
 	  private int Y;
 	  private int energy;
@@ -31,10 +32,9 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 	    IDNumber++; 
 	  } 
 	    
-	    
+	  
 	public void draw(SimGraphics g) {
 		g.drawFastOval(Color.white);
-		
 	}
 
 	public int getX() {
@@ -83,6 +83,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 		
 		int newX, newY; 
 		
+		// Some simple control logic for the Rabbits Movement 
 		switch(rand) {
 		case 0:
 			// North
@@ -119,11 +120,12 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 		
 		
 		if(rab.moveAgentAt(X, Y, newX, newY)) { 
-		energy += rab.eatGrassAt(X, Y);
+		energy += (int)(rab.eatGrassAt(X, Y) * this.model.getNourishment());
 		}
 		energy--; 
 		
 	}
+
 
 
 	public RabbitsGrassSimulationSpace getRabbitGrassSimulationSpace() {
@@ -133,6 +135,16 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 
 	public void setRabbitGrassSimulationSpace(RabbitsGrassSimulationSpace rab) {
 		this.rab = rab;
+	}
+
+
+	public RabbitsGrassSimulationModel getModel() {
+		return model;
+	}
+
+
+	public void setModel(RabbitsGrassSimulationModel model) {
+		this.model = model;
 	}
 	
 
