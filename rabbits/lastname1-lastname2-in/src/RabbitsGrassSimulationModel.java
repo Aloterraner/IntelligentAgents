@@ -2,7 +2,9 @@
 import java.awt.Color;
 import java.util.ArrayList;
 
+import uchicago.src.reflector.RangePropertyDescriptor;
 import uchicago.src.sim.engine.BasicAction;
+import uchicago.src.sim.engine.ModelManipulator;
 import uchicago.src.sim.engine.Schedule;
 import uchicago.src.sim.engine.SimModelImpl;
 import uchicago.src.sim.event.SliderListener;
@@ -12,6 +14,9 @@ import uchicago.src.sim.gui.ColorMap;
 import uchicago.src.sim.gui.Value2DDisplay;
 import uchicago.src.sim.gui.Object2DDisplay;
 import uchicago.src.sim.util.SimUtilities;
+import uchicago.src.sim.analysis.DataSource;
+import uchicago.src.sim.analysis.OpenSequenceGraph;
+import uchicago.src.sim.analysis.Sequence;
 
 /**
  * Class that implements the simulation model for the rabbits grass
@@ -30,11 +35,11 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 	 	private static final int NUMINITRABBIT = 10;
 	  	private static final int NUMINITGRASS = 40;
 	  	private static final int GRIDSIZE = 20;
-	  	private static final int BIRTHTHRESHOLD = 50;
+	  	private static final int BIRTHTHRESHOLD = 10;
 	  	private static final int GRASSGROWTHRATE = 50;
 	  	private static final int FERTILITY = 1; 
-	  	private static final int STARTINGENERGY = 15; 
-	  	private static final float NOURISHMENT = 1;
+	  	private static final int STARTINGENERGY = 5; 
+	  	private static final float NOURISHMENT = 100;
 	  	
 		private Schedule schedule;
 		private DisplaySurface displaySurface; 
@@ -53,6 +58,9 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		private int Fertility = FERTILITY;
 		private float Nourishment = NOURISHMENT; 
 		
+		private OpenSequenceGraph amountOfRabbitInSpace;
+
+		
 		public static void main(String[] args) {
 			
 			System.out.println("Rabbit skeleton");
@@ -70,15 +78,13 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		public void setup() {
 			System.out.println("Setting up ...");
 			
-			this.getModelManipulator().addSlider("Grass Growth Rate", 0, 100, 10, new GrassGrowthIncrementer());
-			this.getModelManipulator().addSlider("Inital Number of Rabbits", 0, 100, 10, new InitRabbitsIncrementer());
-			this.getModelManipulator().addSlider("Inital Amount of Grass", 0, 100, 10, new InitGrassIncrementer());
-			this.getModelManipulator().addSlider("GridSize", 0, 100, 10, new GridSizeIncrementer());
+			initUI();
 			
-			rgSpace = null; 
+			//this.getModelManipulator().addSlider("Fertility", 0, 10, 1, new FertilityIncrementer());
+			
+			rgSpace = null;
 			agentList = new ArrayList<RabbitsGrassSimulationAgent>();
 			schedule = new Schedule(1);
-			boolean restart = false; 
 			
 			if (displaySurface != null){
 			    displaySurface.dispose();
@@ -88,9 +94,40 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 			displaySurface = new DisplaySurface(this, "Alice 1"); 
 			registerDisplaySurface("Alice 1", displaySurface);
 			
+		    if (amountOfRabbitInSpace != null){
+		    	amountOfRabbitInSpace.dispose();
+		      }
+		    amountOfRabbitInSpace = null;
+			
+			amountOfRabbitInSpace = new OpenSequenceGraph("Amount Of Rabbits and Grass In Space",this);
+		    this.registerMediaProducer("Plot", amountOfRabbitInSpace);
+		  }
 			
 
-		}
+		
+		
+		class GrassInSpace implements DataSource, Sequence {
+
+		    public Object execute() {
+		      return new Double(getSValue());
+		    }
+
+		    public double getSValue() {
+		      return (double)rgSpace.getTotalGrass();
+		    }
+		  }
+		
+		class RabbitsInSpace implements DataSource, Sequence {
+
+		    public Object execute() {
+		      return new Double(getSValue());
+		    }
+
+		    public double getSValue() {
+		      return (double)countLivingAgents();
+		    }
+		  }
+
 
 		
 		
@@ -103,8 +140,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		    
 		    
 		    displaySurface.display();
-		    
-		    
+		    amountOfRabbitInSpace.display();
 			
 		}
 
@@ -121,7 +157,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 			 }
 			 
 			 for(int i = 0; i < agentList.size(); i++){
-			     RabbitsGrassSimulationAgent rab = (RabbitsGrassSimulationAgent)agentList.get(i);
+			     RabbitsGrassSimulationAgent rab = agentList.get(i);
 			     rab.report();
 			 }
 		}
@@ -142,6 +178,9 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 			 displayAgents.setObjectList(agentList);
 			 displaySurface.addDisplayable(displayGrass, "Grass");
 			 displaySurface.addDisplayable(displayAgents, "Agents"); 
+			 
+			 amountOfRabbitInSpace.addSequence("Rabbits In Space", new RabbitsInSpace());
+			 amountOfRabbitInSpace.addSequence("Grass In Space", new GrassInSpace());
 		}
 		
 		public void buildSchedule() {
@@ -151,7 +190,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 			      public void execute() {
 			        SimUtilities.shuffle(agentList);
 			        for(int i =0; i < agentList.size(); i++){
-			          RabbitsGrassSimulationAgent rab = (RabbitsGrassSimulationAgent)agentList.get(i);
+			          RabbitsGrassSimulationAgent rab = agentList.get(i);
 			          rab.step();
 			        }
 			         
@@ -166,6 +205,25 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 			        
 			        
 			        displaySurface.updateDisplay();
+			        
+			        
+			        
+			        class CountLiving extends BasicAction {
+			            public void execute(){
+			              countLivingAgents();
+			            }
+			          }
+
+			          schedule.scheduleActionAtInterval(10, new CountLiving());
+
+			          class UpdateAmountOfRabbitInSpace extends BasicAction {
+			            public void execute(){
+			            	amountOfRabbitInSpace.step();
+			            }
+			          }
+
+			          schedule.scheduleActionAtInterval(10, new UpdateAmountOfRabbitInSpace());
+			        
 			      }
 			    }
 			
@@ -182,28 +240,47 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		}
 
 		private void birthNewAgents() {
-			for(int i = (agentList.size() - 1); i >= 0 ; i--){
-			      RabbitsGrassSimulationAgent rab = (RabbitsGrassSimulationAgent)agentList.get(i);
-			      if(rab.getEnergy() > BirthThreshold){
-			        rab.setEnergy(rab.getEnergy()-BirthThreshold);
-			        RabbitsGrassSimulationAgent a = new RabbitsGrassSimulationAgent(startingEnergy);
-			        a.setModel(this);
-					agentList.add(a);
-					rgSpace.addAgent(a); 
-			      }
-		}
+			if(agentList.size() < (GridSize*GridSize)) {
+				for(int i = (agentList.size() - 1); i >= 0 ; i--){
+				      RabbitsGrassSimulationAgent rab = agentList.get(i);
+				      if(rab.getEnergy() > BirthThreshold){
+				    	
+				    	// Fertility effect 
+				    	int numBabies = (int)Math.random()*Fertility + 1;   
+				    	 
+				    	for(int j = 0; j < numBabies; j++ ) {
+					        RabbitsGrassSimulationAgent a = new RabbitsGrassSimulationAgent(startingEnergy);
+					        a.setModel(this);
+							agentList.add(a);
+							rgSpace.addAgent(a); 
+				    	}
+				    	rab.setEnergy(rab.getEnergy()-BirthThreshold);
+
+				      }
+			}
+			}
+			
 		}
 		
 		private void reapDeadAgents(){
 		    for(int i = (agentList.size() - 1); i >= 0 ; i--){
-		      RabbitsGrassSimulationAgent rab = (RabbitsGrassSimulationAgent)agentList.get(i);
+		      RabbitsGrassSimulationAgent rab = agentList.get(i);
 		      if(rab.getEnergy() < 1){
 		        rgSpace.removeAgentAt(rab.getX(), rab.getY());
 		        agentList.remove(i);
 		      }
 		    }
 		  }
-		
+	    private int countLivingAgents(){
+			    int livingAgents = 0;
+			    for(int i = 0; i < agentList.size(); i++){
+			      RabbitsGrassSimulationAgent rab = (RabbitsGrassSimulationAgent)agentList.get(i);
+			      if(rab.getEnergy() > 0) livingAgents++;
+			    }
+			    System.out.println("Number of living agents is: " + livingAgents);
+
+			    return livingAgents;
+			  }
 		
 		public String getName() {
 			// TODO Auto-generated method stub
@@ -289,44 +366,54 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		
 		class GrassGrowthIncrementer extends SliderListener {
 			  public void execute() {
-			    if (isSlidingLeft) {
-			      GrassGrowthRate -= value;
-			    } else {
-			      GrassGrowthRate += value;
-			    }
+				  if(isAdjusting) GrassGrowthRate = value;
 			  }
 			};
-		class InitRabbitsIncrementer extends SliderListener {
-			  public void execute() {
-				if (isSlidingLeft) {
-				  NumInitRabbits -= value;
-				} else {
-				  NumInitRabbits += value;
-				}
+	     
+	     class BirthThresholdIncrementer extends SliderListener {
+			  public void execute() { 
+				  if(isAdjusting) BirthThreshold = value;
 			   }
 	     };
 	     
-	     class InitGrassIncrementer extends SliderListener {
-			  public void execute() {
-				if (isSlidingLeft) {
-				  NumInitGrass -= value;
-				} else {
-				  NumInitGrass += value;
-				}
+	     class StartingEnergyIncrementer extends SliderListener {
+			  public void execute() { 
+				  if(isAdjusting) startingEnergy = value;
 			   }
 	     };
 	     
-	     class GridSizeIncrementer extends SliderListener {
-			  public void execute() {
-				if (isSlidingLeft) {
-				  GridSize -= value;
-				} else {
-				  GridSize += value;
-				}
+	     
+	     class NourishmentIncrementer extends SliderListener {
+			  public void execute() { 
+				  if(isAdjusting) Nourishment = value;
 			   }
 	     };
+	     
+	     public void initUI() {
+	    	
+	    	RangePropertyDescriptor gr = new RangePropertyDescriptor("GrassGrowthRate",0, 1000, 200);
+			descriptors.put("GrassGrowthRate", gr);  
+			RangePropertyDescriptor bt = new RangePropertyDescriptor("BirthThreshold",10, 100, 10);
+			descriptors.put("BirthThreshold", bt);
+	    	RangePropertyDescriptor g = new RangePropertyDescriptor("GridSize",10, 100, 20);
+		    descriptors.put("GridSize", g); 
+	    	RangePropertyDescriptor inr = new RangePropertyDescriptor("NumInitRabbits",10, 150, 20);
+		    descriptors.put("NumInitRabbits", inr);  
+	        RangePropertyDescriptor ing = new RangePropertyDescriptor("NumInitGrass",0, 4000, 1000);
+	    	descriptors.put("NumInitGrass", ing); 
+	    	RangePropertyDescriptor fer = new RangePropertyDescriptor("Fertility",0, 8, 1);
+	    	descriptors.put("Fertility", fer); 
+	    	
+	    	 
+	    	 
+	    	ModelManipulator modelMani = this.getModelManipulator();
+	    	modelMani.init();
+	    	modelMani.addSlider("Grass Growth Rate", 0, 300, 25, new GrassGrowthIncrementer());
+	    	modelMani.addSlider("Nourishment", 0, 200, 20, new NourishmentIncrementer());
+	    	modelMani.addSlider("BirthThreshold", 10, 80, 5, new BirthThresholdIncrementer());
+	    	modelMani.addSlider("startingEnergy", 0, 100, 10, new StartingEnergyIncrementer());
+	     }
 			
-
-		
+			
 		
 }
