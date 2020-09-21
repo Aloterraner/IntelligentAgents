@@ -120,7 +120,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 		
 		
 		if(rab.moveAgentAt(X, Y, newX, newY)) { 
-		energy += (int)(rab.eatGrassAt(X, Y) * (this.model.getNourishment()/100));
+		energy += (int)(rab.eatGrassAt(X, Y) * (this.model.getNourishment()/100.0));
 		}
 		energy--; 
 		

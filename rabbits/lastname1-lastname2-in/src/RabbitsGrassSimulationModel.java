@@ -33,12 +33,12 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 	
 	
 	 	private static final int NUMINITRABBIT = 10;
-	  	private static final int NUMINITGRASS = 40;
+	  	private static final int NUMINITGRASS = 100;
 	  	private static final int GRIDSIZE = 20;
-	  	private static final int BIRTHTHRESHOLD = 10;
+	  	private static final int BIRTHTHRESHOLD = 20;
 	  	private static final int GRASSGROWTHRATE = 50;
 	  	private static final int FERTILITY = 1; 
-	  	private static final int STARTINGENERGY = 5; 
+	  	private static final int STARTINGENERGY = 15; 
 	  	private static final float NOURISHMENT = 100;
 	  	
 		private Schedule schedule;
@@ -401,7 +401,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		    descriptors.put("NumInitRabbits", inr);  
 	        RangePropertyDescriptor ing = new RangePropertyDescriptor("NumInitGrass",0, 4000, 1000);
 	    	descriptors.put("NumInitGrass", ing); 
-	    	RangePropertyDescriptor fer = new RangePropertyDescriptor("Fertility",0, 8, 1);
+	    	RangePropertyDescriptor fer = new RangePropertyDescriptor("Fertility",1, 8, 1);
 	    	descriptors.put("Fertility", fer); 
 	    	
 	    	 
