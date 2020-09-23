@@ -1,11 +1,6 @@
 import java.awt.Color;
-
-import uchicago.src.sim.gui.ColorMap;
 import uchicago.src.sim.gui.Drawable;
 import uchicago.src.sim.gui.SimGraphics;
-
-
-
 
 
 /**
@@ -15,24 +10,22 @@ import uchicago.src.sim.gui.SimGraphics;
  */
 
 public class RabbitsGrassSimulationAgent implements Drawable {
-	  private RabbitsGrassSimulationModel model; 
-	  private int X;
-	  private int Y;
-	  private int energy;
-	  private static int IDNumber = 0;
-	  private int ID;
-	  private RabbitsGrassSimulationSpace rab; 
+	private RabbitsGrassSimulationModel model; 
+	private int X;
+	private int Y;
+	private int energy;
+	private static int IDNumber = 0;
+	private int ID;
+	private RabbitsGrassSimulationSpace rab; 
 	  
-	  
-	  public RabbitsGrassSimulationAgent(int startingEnergy){
-	    X = -1;
+	public RabbitsGrassSimulationAgent(int startingEnergy){
+		X = -1;
 	    Y = -1;
 	    setEnergy(startingEnergy);
 	    ID = IDNumber + 1; 
 	    IDNumber++; 
-	  } 
+	} 
 	    
-	  
 	public void draw(SimGraphics g) {
 		g.drawFastOval(Color.white);
 	}
@@ -47,11 +40,9 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 		return Y;
 	}
 
-
 	public int getEnergy() {
 		return energy;
 	}
-
 
 	public void setEnergy(int energy) {
 		this.energy = energy;
@@ -75,7 +66,6 @@ public class RabbitsGrassSimulationAgent implements Drawable {
                 getEnergy() + " Power"
                 );
 	}
-
 
 	public void step() {
 		
@@ -126,30 +116,22 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 		
 	}
 
-
-
 	public RabbitsGrassSimulationSpace getRabbitGrassSimulationSpace() {
 		return rab;
 	}
-
 
 	public void setRabbitGrassSimulationSpace(RabbitsGrassSimulationSpace rab) {
 		this.rab = rab;
 	}
 
-
 	public RabbitsGrassSimulationModel getModel() {
 		return model;
 	}
-
 
 	public void setModel(RabbitsGrassSimulationModel model) {
 		this.model = model;
 	}
 	
-
-	
-
 }
 	
 

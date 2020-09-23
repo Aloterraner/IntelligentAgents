@@ -37,7 +37,6 @@ public class RabbitsGrassSimulationSpace {
 		   return retVal;
 		   }
 	
-	
 	public void growGrass(int grassGrowth){
 		    // Randomly place money in moneySpace
 		   for(int i = 0; i < grassGrowth; i++){
