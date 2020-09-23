@@ -37,7 +37,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 	  	private static final int GRASSGROWTHRATE = 50;
 	  	private static final int FERTILITY = 1; 
 	  	private static final int STARTINGENERGY = 15; 
-	  	private static final float NOURISHMENT = 100;
+	  	private static final int NOURISHMENT = 100;
 	  	
 		private Schedule schedule;
 		private DisplaySurface displaySurface; 
@@ -52,7 +52,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		private int BirthThreshold = BIRTHTHRESHOLD;
 		private int GrassGrowthRate = GRASSGROWTHRATE;
 		private int Fertility = FERTILITY;
-		private float Nourishment = NOURISHMENT; 
+		private int Nourishment = NOURISHMENT; 
 		
 		private OpenSequenceGraph amountOfRabbitInSpace;
 
@@ -189,11 +189,6 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 			        birthNewAgents();
 			        
 			        rgSpace.growGrass(GrassGrowthRate);
-			        
-			        
-			        
-			        
-			        
 			        displaySurface.updateDisplay();
 			        
 			        
@@ -349,11 +344,11 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 			this.startingEnergy = startingEnergy;
 		}
 
-		public float getNourishment() {
+		public int getNourishment() {
 			return Nourishment;
 		}
 
-		public void setNourishment(float nourishment) {
+		public void setNourishment(int nourishment) {
 			Nourishment = nourishment;
 		}
 
@@ -403,6 +398,8 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 	    	descriptors.put("NumInitGrass", ing); 
 	    	RangePropertyDescriptor fer = new RangePropertyDescriptor("Fertility", 1, 8, 1);
 	    	descriptors.put("Fertility", fer); 
+	    	RangePropertyDescriptor nour = new RangePropertyDescriptor("Nourishment", 0, 200, 40);
+	    	descriptors.put("Nourishment", nour); 
 	    	
 	    	ModelManipulator modelMani = this.getModelManipulator();
 	    	modelMani.init();
