@@ -80,8 +80,6 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 			
 			initUI();
 			
-			//this.getModelManipulator().addSlider("Fertility", 0, 10, 1, new FertilityIncrementer());
-			
 			rgSpace = null;
 			agentList = new ArrayList<RabbitsGrassSimulationAgent>();
 			schedule = new Schedule(1);
@@ -89,6 +87,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 			if (displaySurface != null){
 			    displaySurface.dispose();
 			}
+			
 			displaySurface = null;
 
 			displaySurface = new DisplaySurface(this, "Alice 1"); 
@@ -302,10 +301,14 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		}
 		
 		private void addNewAgent(){
-			RabbitsGrassSimulationAgent a = new RabbitsGrassSimulationAgent(startingEnergy);
-			a.setModel(this);
-			agentList.add(a);
-			rgSpace.addAgent(a); 
+
+				RabbitsGrassSimulationAgent a = new RabbitsGrassSimulationAgent(startingEnergy);
+				a.setModel(this);
+				
+				if(rgSpace.addAgent(a)) {
+					agentList.add(a);
+				}		
+	
 		}
 		
 		public int getNumInitGrass() {
@@ -405,7 +408,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 	    	descriptors.put("Fertility", fer); 
 	    	
 	    	 
-	    	 
+	    	
 	    	ModelManipulator modelMani = this.getModelManipulator();
 	    	modelMani.init();
 	    	modelMani.addSlider("Grass Growth Rate", 0, 300, 25, new GrassGrowthIncrementer());

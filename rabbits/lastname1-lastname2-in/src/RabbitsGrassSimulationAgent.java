@@ -3,6 +3,7 @@ import java.awt.Color;
 import uchicago.src.sim.gui.ColorMap;
 import uchicago.src.sim.gui.Drawable;
 import uchicago.src.sim.gui.SimGraphics;
+import uchicago.src.sim.space.Object2DGrid;
 
 
 
@@ -80,7 +81,7 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 	public void step() {
 		
 		int rand = (int)(Math.random() * 4);
-		
+		Object2DGrid grid = rab.getAgentSpace();
 		int newX, newY; 
 		
 		// Some simple control logic for the Rabbits Movement 
@@ -89,25 +90,32 @@ public class RabbitsGrassSimulationAgent implements Drawable {
 			// North
 			newX = X;
 			newY = Y+1;
-			if(newY > rab.getWonderlandSpace().getSizeY()-1) newY = 0; 
+			
+			newX = (newX + grid.getSizeX()) % grid.getSizeX();
+		    newY = (newY + grid.getSizeY()) % grid.getSizeY();
+		    
 			break; 
 		case 1:
 			// East
 			newX = X+1;
 			newY = Y;
-			if(newX > rab.getWonderlandSpace().getSizeX()-1) newX = 0; 
-			break;
+			newX = (newX + grid.getSizeX()) % grid.getSizeX();
+		    newY = (newY + grid.getSizeY()) % grid.getSizeY();
+		    break; 
+		    
 		case 2: 
 			// South
 			newX = X;
 			newY = Y-1;
-			if(newY < 0) newY = rab.getWonderlandSpace().getSizeY()-1; 
+			newX = (newX + grid.getSizeX()) % grid.getSizeX();
+		    newY = (newY + grid.getSizeY()) % grid.getSizeY();
 			break;
 		case 3: 
 			// West
 			newX = X-1; 
 			newY = Y;
-			if(newX < 0) newX = rab.getWonderlandSpace().getSizeX()-1; 
+			newX = (newX + grid.getSizeX()) % grid.getSizeX();
+		    newY = (newY + grid.getSizeY()) % grid.getSizeY();
 			break;
 		default:
 			newX = X;
