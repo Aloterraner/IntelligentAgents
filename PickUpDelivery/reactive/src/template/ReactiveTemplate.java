@@ -12,6 +12,10 @@ import logist.task.Task;
 import logist.task.TaskDistribution;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
+import java.util.HashMap;
+import java.util.Arrays;
+
+
 
 public class ReactiveTemplate implements ReactiveBehavior {
 
@@ -22,6 +26,7 @@ public class ReactiveTemplate implements ReactiveBehavior {
 	private int numStates; 
 	private int numCities; 
 	private Agent myAgent;
+	private State[][] states;
 	private int[] VB;
 	private int[] policy; 
 	private Topology topology; 
@@ -31,7 +36,7 @@ public class ReactiveTemplate implements ReactiveBehavior {
 	// T(s,a,s'), returns the Probability to go from state s to state s' when taking action a. 
 	private double[][][] TransitionTable; 
 	// R(s,a) returns the Expected reward when taking Action a in state s
-	private double[][] RewardTable; 
+	private int[][] RewardTable; 
 
 	@Override
 	public void setup(Topology topology, TaskDistribution td, Agent agent) {
@@ -47,14 +52,40 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		
 		this.random = new Random();
 		this.pPickup = discount;
-		this.numActions = 0;
 		this.myAgent = agent;
 		this.numCities = topology.cities().size();
 		
+		
+		
+		
+		initStates();
+		initActions();
 		buildTransitionTable(topology, td, agent);
 		buildRewardTable(topology, td, agent);
 		ValueIteration(discount);
 		
+		
+		
+	}
+
+	private void initActions() {
+		this.numActions = this.numCities + 1;
+		
+	}
+
+	private void initStates() {
+		this.numStates = this.numCities * this.numCities;
+		this.states = new State[this.numCities][this.numCities];
+		int id = 0; 
+		for(City from : topology.cities()) {
+			for(City to : topology.cities()) {
+				this.states[from.id][to.id]= new State(from, to,id);
+				id++;
+				
+			}
+			
+			
+		}
 		
 		
 	}
@@ -83,17 +114,57 @@ public class ReactiveTemplate implements ReactiveBehavior {
 	
 	public void buildTransitionTable(Topology topology, TaskDistribution td, Agent agent) {
 		TransitionTable = new double[numStates][numActions][numStates]; 
+		Arrays.fill(TransitionTable, 0);
 		
+		for(City from : topology.cities()) {
+			
+			for (City neighbor : from.neighbors()) {
+				
+				
+				for (City next :  topology.cities()) {
+					TransitionTable[this.states[from.id][neighbor.id].getId()][neighbor.id][this.states[neighbor.id][next.id].getId()]= td.probability(neighbor, next);
+				}
+				
+			}
+			
+		}
+		
+		for(City from : topology.cities()) {
+			for(City to : topology.cities()) {
+				for (City next :  topology.cities()) {
+					TransitionTable[this.states[from.id][to.id].getId()][this.numActions - 1][this.states[to.id][next.id].getId()]= td.probability(to, next);
+				}
+				
+			}
+		}
 		
 		
 		
 	}
 		
 	public void buildRewardTable(Topology topology, TaskDistribution td, Agent agent) {
-		RewardTable = new double[numStates][numActions]; 
+		RewardTable = new int[numStates][numActions]; 
+		Arrays.fill(RewardTable, 0);
+		
+		// Case 1: MoveAction 
+		
+		for(City from : topology.cities()) {
+			for(City neighbor : from.neighbors()) {
+				RewardTable[this.states[from.id][neighbor.id].getId()][neighbor.id] = - td.weight(from, neighbor); 
+			}
+		}
 		
 		
 		
+		// Case 2: PickUpAndDeliver 
+		
+		
+		
+		for(City from : topology.cities()) {
+			for(City to : topology.cities()) {
+				RewardTable[this.states[from.id][to.id].getId()][numActions - 1] = td.reward(from, to) - td.weight(from, to); 
+			}
+		}
 		
 	}
 	
