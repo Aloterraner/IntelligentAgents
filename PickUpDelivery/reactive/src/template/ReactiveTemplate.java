@@ -23,10 +23,9 @@ public class ReactiveTemplate implements ReactiveBehavior {
 	private int numCities; 
 	private Agent myAgent;
 	private int[] VB;
-	private int[] policy; 
 	private Topology topology; 
 	private TaskDistribution TD; 
-	
+
 	
 	// T(s,a,s'), returns the Probability to go from state s to state s' when taking action a. 
 	private double[][][] TransitionTable; 
@@ -47,17 +46,49 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		
 		this.random = new Random();
 		this.pPickup = discount;
-		this.numActions = 0;
 		this.myAgent = agent;
 		this.numCities = topology.cities().size();
 		
+		
+		
+		
+		for(City from: topology.cities()) {
+			System.out.println("City: " + from.name +" has ID:  "+ from.id ) ; 
+			 
+			
+		}
 		buildTransitionTable(topology, td, agent);
 		buildRewardTable(topology, td, agent);
 		ValueIteration(discount);
 		
 		
+		/* 
 		
+		// Summing over 
+		for(City from: topology.cities()) {
+			double sum  = 0; 
+			System.out.println(from.name); 
+			for(City to: topology.cities()) {
+
+				System.out.println("Probability of going from: "+from.name + " to "+  to.name); 
+				System.out.println(td.probability(from, to)); 
+				sum += td.probability(from, to); 
+			}
+			System.out.println("Sum over all Cities: " + sum); 
+			System.out.println("Probability of no task in the City: " + from.name + "  " +td.probability(from, null));
+			System.out.println("Sum of both: " + (sum + td.probability(from, null))); 
+			
+			
+			
+		}
+		System.out.println(""); 
+				
+				
+		System.out.println("");
+		*/ 
 	}
+
+
 
 	@Override
 	public Action act(Vehicle vehicle, Task availableTask) {
@@ -204,6 +235,9 @@ public class ReactiveTemplate implements ReactiveBehavior {
 	}
 			
 			
+	
+	
+	}
 			
 			
 	
@@ -212,4 +246,4 @@ public class ReactiveTemplate implements ReactiveBehavior {
 	
 	
 	
-}
+
