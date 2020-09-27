@@ -37,7 +37,6 @@ public class RabbitsGrassSimulationSpace {
 		   return retVal;
 		   }
 	
-	
 	public void growGrass(int grassGrowth){
 		    // Randomly place money in moneySpace
 		   for(int i = 0; i < grassGrowth; i++){
@@ -55,7 +54,12 @@ public class RabbitsGrassSimulationSpace {
 		       I = 0;
 		    }
 		    // Replace the Integer object with another one with the new value
-		      wonderlandSpace.putObjectAt(x,y,Integer.valueOf(I + 1));
+		    if (I < 10) { // grass cannot grow forever
+		    	wonderlandSpace.putObjectAt(x,y,Integer.valueOf(I + 1));
+		    }
+		    else {
+		    	wonderlandSpace.putObjectAt(x,y,Integer.valueOf(I));
+		    }
 		    }
 		  }
 	

@@ -30,8 +30,6 @@ import uchicago.src.sim.analysis.Sequence;
 
 public class RabbitsGrassSimulationModel extends SimModelImpl {	
 	
-	
-	
 	 	private static final int NUMINITRABBIT = 10;
 	  	private static final int NUMINITGRASS = 100;
 	  	private static final int GRIDSIZE = 20;
@@ -39,13 +37,11 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 	  	private static final int GRASSGROWTHRATE = 50;
 	  	private static final int FERTILITY = 1; 
 	  	private static final int STARTINGENERGY = 15; 
-	  	private static final float NOURISHMENT = 100;
+	  	private static final int NOURISHMENT = 100;
 	  	
 		private Schedule schedule;
 		private DisplaySurface displaySurface; 
 		private RabbitsGrassSimulationSpace rgSpace;
-		
-		
 		
 		private ArrayList<RabbitsGrassSimulationAgent> agentList;
 
@@ -56,7 +52,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		private int BirthThreshold = BIRTHTHRESHOLD;
 		private int GrassGrowthRate = GRASSGROWTHRATE;
 		private int Fertility = FERTILITY;
-		private float Nourishment = NOURISHMENT; 
+		private int Nourishment = NOURISHMENT; 
 		
 		private OpenSequenceGraph amountOfRabbitInSpace;
 
@@ -103,8 +99,6 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		  }
 			
 
-		
-		
 		class GrassInSpace implements DataSource, Sequence {
 
 		    public Object execute() {
@@ -127,10 +121,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		    }
 		  }
 
-
 		
-		
-
 		public void begin() {
 			buildModel();
 		    buildSchedule();
@@ -142,7 +133,6 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		    amountOfRabbitInSpace.display();
 			
 		}
-
 		
 		public void buildModel() {
 			 System.out.println("Building Model ...");
@@ -198,11 +188,6 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 			        birthNewAgents();
 			        
 			        rgSpace.growGrass(GrassGrowthRate);
-			        
-			        
-			        
-			        
-			        
 			        displaySurface.updateDisplay();
 			        
 			        
@@ -270,6 +255,7 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		      }
 		    }
 		  }
+		
 	    private int countLivingAgents(){
 			    int livingAgents = 0;
 			    for(int i = 0; i < agentList.size(); i++){
@@ -290,7 +276,6 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 			// TODO Auto-generated method stub
 			return schedule;
 		}
-
 
 		public int getBirthThreshold() {
 			return BirthThreshold;
@@ -316,7 +301,13 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		}
 
 		public void setNumInitGrass(int numInitGrass) {
-			NumInitGrass = numInitGrass;
+			if (numInitGrass > (GridSize * GridSize)) {
+				throw new IllegalArgumentException("Too much grass (" + numInitGrass + ") for given grid size (" + GridSize + ")");
+			}
+			else {
+				NumInitGrass = numInitGrass;
+			}
+			
 		}
 
 		public int getGridSize() {
@@ -332,7 +323,12 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 		}
 
 		public void setNumInitRabbits(int numInitRabbits) {
-			NumInitRabbits = numInitRabbits;
+			if (numInitRabbits > (GridSize * GridSize)) {
+				throw new IllegalArgumentException("Too many rabbits (" + numInitRabbits + ") for given grid size (" + GridSize + ")");
+			}
+			else {
+				NumInitRabbits = numInitRabbits;
+			}
 		}
 
 		public int getGrassGrowthRate() {
@@ -351,11 +347,11 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 			this.startingEnergy = startingEnergy;
 		}
 
-		public float getNourishment() {
+		public int getNourishment() {
 			return Nourishment;
 		}
 
-		public void setNourishment(float nourishment) {
+		public void setNourishment(int nourishment) {
 			Nourishment = nourishment;
 		}
 
@@ -373,41 +369,40 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 			  }
 			};
 	     
-	     class BirthThresholdIncrementer extends SliderListener {
-			  public void execute() { 
-				  if(isAdjusting) BirthThreshold = value;
-			   }
-	     };
+	    class BirthThresholdIncrementer extends SliderListener {
+	    	public void execute() { 
+	    		if(isAdjusting) BirthThreshold = value;
+			}
+	    };
 	     
-	     class StartingEnergyIncrementer extends SliderListener {
-			  public void execute() { 
-				  if(isAdjusting) startingEnergy = value;
-			   }
-	     };
+	    class StartingEnergyIncrementer extends SliderListener {
+	    	public void execute() { 
+	    		if(isAdjusting) startingEnergy = value;
+			}
+	    };
 	     
+	    class NourishmentIncrementer extends SliderListener {
+	    	public void execute() { 
+	    		if(isAdjusting) Nourishment = value;
+			}
+	    };
 	     
-	     class NourishmentIncrementer extends SliderListener {
-			  public void execute() { 
-				  if(isAdjusting) Nourishment = value;
-			   }
-	     };
-	     
-	     public void initUI() {
+	    public void initUI() {
 	    	
-	    	RangePropertyDescriptor gr = new RangePropertyDescriptor("GrassGrowthRate",0, 1000, 200);
+	    	RangePropertyDescriptor gr = new RangePropertyDescriptor("GrassGrowthRate", 0, 1000, 200);
 			descriptors.put("GrassGrowthRate", gr);  
-			RangePropertyDescriptor bt = new RangePropertyDescriptor("BirthThreshold",10, 100, 10);
+			RangePropertyDescriptor bt = new RangePropertyDescriptor("BirthThreshold", 10, 100, 10);
 			descriptors.put("BirthThreshold", bt);
-	    	RangePropertyDescriptor g = new RangePropertyDescriptor("GridSize",10, 100, 20);
+	    	RangePropertyDescriptor g = new RangePropertyDescriptor("GridSize", 10, 100, 20);
 		    descriptors.put("GridSize", g); 
-	    	RangePropertyDescriptor inr = new RangePropertyDescriptor("NumInitRabbits",10, 150, 20);
+	    	RangePropertyDescriptor inr = new RangePropertyDescriptor("NumInitRabbits", 10, 150, 20);
 		    descriptors.put("NumInitRabbits", inr);  
-	        RangePropertyDescriptor ing = new RangePropertyDescriptor("NumInitGrass",0, 4000, 1000);
+	        RangePropertyDescriptor ing = new RangePropertyDescriptor("NumInitGrass", 0, 4000, 1000);
 	    	descriptors.put("NumInitGrass", ing); 
-	    	RangePropertyDescriptor fer = new RangePropertyDescriptor("Fertility",1, 8, 1);
+	    	RangePropertyDescriptor fer = new RangePropertyDescriptor("Fertility", 1, 8, 1);
 	    	descriptors.put("Fertility", fer); 
-	    	
-	    	 
+	    	RangePropertyDescriptor nour = new RangePropertyDescriptor("Nourishment", 0, 200, 40);
+	    	descriptors.put("Nourishment", nour); 
 	    	
 	    	ModelManipulator modelMani = this.getModelManipulator();
 	    	modelMani.init();
@@ -415,8 +410,5 @@ public class RabbitsGrassSimulationModel extends SimModelImpl {
 	    	modelMani.addSlider("Nourishment", 0, 200, 20, new NourishmentIncrementer());
 	    	modelMani.addSlider("BirthThreshold", 10, 80, 5, new BirthThresholdIncrementer());
 	    	modelMani.addSlider("startingEnergy", 0, 100, 10, new StartingEnergyIncrementer());
-	     }
-			
-			
-		
+	    }
 }
