@@ -1,4 +1,6 @@
 /.metadata/
 *.DS_Store
 *.classpath
-*.class
+*.project
+*.log
+*.prefs
