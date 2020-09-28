@@ -12,7 +12,6 @@ import logist.task.Task;
 import logist.task.TaskDistribution;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
-import java.util.HashMap;
 import java.util.Arrays;
 
 
@@ -191,9 +190,7 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		
 		
 		// Case 2: PickUpAndDeliver 
-		
-		
-		
+
 		for(City from : topology.cities()) {
 			for(City to : topology.cities()) {
 				RewardTable[this.states[from.id][to.id].getId()][numActions - 1] = td.reward(from, to) - td.weight(from, to); 
