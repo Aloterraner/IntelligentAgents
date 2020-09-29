@@ -132,8 +132,14 @@ public class ReactiveTemplate implements ReactiveBehavior {
 	
 	
 	public void buildTransitionTable(Topology topology, TaskDistribution td, Agent agent) {
-		TransitionTable = new double[numStates][numActions][numStates]; 
-		Arrays.fill(TransitionTable, 0);
+		TransitionTable = new double[numStates][numActions][numStates];
+		
+		// Arrays.fill only works for 1D arrays
+		for (int i=0; i < numStates; i++) {
+			for (int j=0; j < numActions; j++) {
+				Arrays.fill(TransitionTable[i][j], 0);
+			}
+		}
 		
 		for(City from : topology.cities()) {
 			
@@ -170,10 +176,12 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		
 	public void buildRewardTable(Topology topology, TaskDistribution td, Agent agent) {
 		RewardTable = new int[numStates][numActions]; 
-		Arrays.fill(RewardTable, 0);
+		
+		for (int i=0; i < numStates; i++) {
+			Arrays.fill(RewardTable[i], 0);
+		}
 		
 		// Case 1: MoveAction 
-		
 		for(City from : topology.cities()) {
 			for(City neighbor : from.neighbors()) {
 				RewardTable[this.states[from.id][neighbor.id].getId()][neighbor.id] = - td.weight(from, neighbor); 
