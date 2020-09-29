@@ -44,21 +44,14 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		Double discount = agent.readProperty("discount-factor", Double.class,
 				0.95);
 		
-		
-		
-		
-		
 		this.random = new Random();
 		this.pPickup = discount;
 		this.myAgent = agent;
 		this.numCities = topology.cities().size();
-		
-		
+		this.topology = topology;
 		
 		for(City from: topology.cities()) {
 			System.out.println("City: " + from.name +" has ID:  "+ from.id ) ; 
-			 
-			
 		}
 		initStates();
 		initActions();
