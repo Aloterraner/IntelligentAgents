@@ -47,20 +47,18 @@ public class ReactiveTemplate implements ReactiveBehavior {
 				0.95);
 		
 		
-		
-		
 		this.itcount = 0; 
 		this.random = new Random();
 		this.discount = discount;
 		this.myAgent = agent;
 		this.numCities = topology.cities().size();
-		this.topology = topology; 
-		this.TD = td; 
-		
 
+		this.topology = topology;
 		
-		System.out.println("The topology has " + numCities+ " Cities");
-		initStates(); 
+		for(City from: topology.cities()) {
+			System.out.println("City: " + from.name +" has ID:  "+ from.id ) ; 
+		}
+		initStates();
 		initActions();
 		buildTransitionTable(topology, td, agent);
 		buildRewardTable(topology, td, agent);
@@ -68,7 +66,7 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		
 		System.out.println("The Strategy is: ");
 		System.out.println(Arrays.toString(strategy)); 
-		
+		System.out.println("\n Checking in Cities ! \n "); 
 		for(City city : topology.cities()) {
 			System.out.println("Name: " +city.name+ " ID: " + city.id);
 		}
@@ -165,11 +163,11 @@ public class ReactiveTemplate implements ReactiveBehavior {
 	public void buildTransitionTable(Topology topology, TaskDistribution td, Agent agent) {
 		System.out.println("Building Transition Table ..."); 
 		this.TransitionTable = new double[numStates][numActions][numStates];
-		for(int i = 0; i< numStates; i++) {
-			for(int j = 0; j < numActions; j++) {
-				for(int k = 0 ; k < numStates; k++) {
-					this.TransitionTable[i][j][k] = 0.0; 
-				}
+		
+		// Arrays.fill only works for 1D arrays
+		for (int i=0; i < numStates; i++) {
+			for (int j=0; j < numActions; j++) {
+				Arrays.fill(TransitionTable[i][j], 0);
 			}
 		}
 		
@@ -237,9 +235,9 @@ public class ReactiveTemplate implements ReactiveBehavior {
 				
 					RewardTable[i][j] = 0; 
 			}
-		}
-		// Case 1: MoveAction 
+		} 
 		
+		// Case 1: MoveAction 
 		for(City from : topology.cities()) {
 			for(City neighbor : from.neighbors()) {
 				
@@ -285,7 +283,7 @@ public class ReactiveTemplate implements ReactiveBehavior {
 			
 			for(int s = 0; s < numStates; s++) {
 				double Q;
-				double max = Integer.MIN_VALUE;
+				double max = Double.MIN_VALUE;
 				int index = 0;
 				for(int a = 0; a < numActions ; a++) {
 					Q = RewardTable[s][a];
