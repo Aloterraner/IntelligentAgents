@@ -26,9 +26,11 @@ public class ReactiveTemplate implements ReactiveBehavior {
 	private int numCities; 
 	private Agent myAgent;
 	private State[][] states;
-	private int[] VB;
+	private double[] V;
 	private Topology topology; 
 	private TaskDistribution TD; 
+	private int itcount; 
+	private int[] strategy;
 
 	
 	// T(s,a,s'), returns the Probability to go from state s to state s' when taking action a. 
@@ -47,27 +49,34 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		
 		
 		
-		
+		this.itcount = 0; 
 		this.random = new Random();
-		this.pPickup = discount;
+		this.discount = discount;
 		this.myAgent = agent;
 		this.numCities = topology.cities().size();
+		this.topology = topology; 
+		this.TD = td; 
 		
+
 		
-		
-		for(City from: topology.cities()) {
-			System.out.println("City: " + from.name +" has ID:  "+ from.id ) ; 
-			 
-			
-		}
-		initStates();
+		System.out.println("The topology has " + numCities+ " Cities");
+		initStates(); 
 		initActions();
 		buildTransitionTable(topology, td, agent);
 		buildRewardTable(topology, td, agent);
 		ValueIteration(discount);
 		
+		System.out.println("The Strategy is: ");
+		System.out.println(Arrays.toString(strategy)); 
+		
+		for(City city : topology.cities()) {
+			System.out.println("Name: " +city.name+ " ID: " + city.id);
+		}
+		
+		
 		
 		/* 
+		
 		
 		// Summing over 
 		for(City from: topology.cities()) {
@@ -95,11 +104,13 @@ public class ReactiveTemplate implements ReactiveBehavior {
 
 
 	private void initActions() {
+		System.out.println("Initalizing Actions ..."); 
 		this.numActions = this.numCities + 1;
-		
+		System.out.println(numActions + " Actions created!");
 	}
 
 	private void initStates() {
+		System.out.println("Initalizing State Space ..."); 
 		this.numStates = this.numCities * this.numCities;
 		this.states = new State[this.numCities][this.numCities];
 		int id = 0; 
@@ -112,25 +123,38 @@ public class ReactiveTemplate implements ReactiveBehavior {
 			
 			
 		}
-		
-		
+		System.out.println(numStates + " States created!");
 	}	
 	
 	@Override
 	public Action act(Vehicle vehicle, Task availableTask) {
 		Action action;
-
-		if (availableTask == null || random.nextDouble() > pPickup) {
-			City currentCity = vehicle.getCurrentCity();
-			action = new Move(currentCity.randomNeighbor(random));
-		} else {
-			action = new Pickup(availableTask);
+		State current_state; 
+		// Determine the current state of the agent by looking at his current location and the possible task location
+		// Going into the state (i,i) if no task is aviable; 
+		if(availableTask == null) {
+			current_state = states[vehicle.getCurrentCity().id][vehicle.getCurrentCity().id];
+		// Going into the state (i,j) corresponding to where the task requieres delivery	
+		}else {
+			current_state = states[vehicle.getCurrentCity().id][availableTask.deliveryCity.id];
 		}
 		
-		if (numActions >= 1) {
+		int action_index = strategy[current_state.getId()]; 
+		
+		if(action_index == numCities){
+			System.out.println("I pickedUp");
+			action = new Pickup(availableTask); 
+		}else{
+			System.out.println("I moved"); 
+			action = new Move(topology.cities().get(action_index)); 
+		}
+		
+		
+		
+		if (itcount >= 1) {
 			System.out.println("The total profit after "+numActions+" actions is "+myAgent.getTotalProfit()+" (average profit: "+(myAgent.getTotalProfit() / (double)numActions)+")");
 		}
-		numActions++;
+		itcount++;
 		
 		return action;
 	}
@@ -139,31 +163,61 @@ public class ReactiveTemplate implements ReactiveBehavior {
 	
 	
 	public void buildTransitionTable(Topology topology, TaskDistribution td, Agent agent) {
-		TransitionTable = new double[numStates][numActions][numStates]; 
-		Arrays.fill(TransitionTable, 0);
-		
-		for(City from : topology.cities()) {
-			
-			for (City neighbor : from.neighbors()) {
-				
-				
-				for (City next :  topology.cities()) {
-					TransitionTable[this.states[from.id][neighbor.id].getId()][neighbor.id][this.states[neighbor.id][next.id].getId()]= td.probability(neighbor, next);
+		System.out.println("Building Transition Table ..."); 
+		this.TransitionTable = new double[numStates][numActions][numStates];
+		for(int i = 0; i< numStates; i++) {
+			for(int j = 0; j < numActions; j++) {
+				for(int k = 0 ; k < numStates; k++) {
+					this.TransitionTable[i][j][k] = 0.0; 
 				}
+			}
+		}
+		
+		
+		// Init for the Move actions 
+		// No Task (i,i) MoveX(0,...,n) (X,[0,...,n]) = td.prob(X, [0,...,n]) if (X neighbor i)  else 0.0  
+		// A Task  (i,Y) MoveX(0,...,n) (X,[0,...,n]) = td.prob(X, [0,...,n]) if (X neighbor i ) else 0.0  
+		for(City from: topology.cities()) {
+			for(City task: topology.cities()) {
+				for(City neighbor: from.neighbors()) {
+					for(City neighborTask : topology.cities()) {
+						if(neighbor.id != neighborTask.id) {
+							this.TransitionTable[this.states[from.id][task.id].getId()][neighbor.id][this.states[neighbor.id][neighborTask.id].getId()] = td.probability(neighbor, neighborTask); 
+						}else {
+							this.TransitionTable[this.states[from.id][task.id].getId()][neighbor.id][this.states[neighbor.id][neighbor.id].getId()] = td.probability(neighbor, null); 
+						}
+						
+					}
+					
+					
+					
+					
+				}
+				
+				
+				
 				
 			}
 			
+			
 		}
 		
+		
+		
+		
+		// Init for the Deliver Actions
 		for(City from : topology.cities()) {
 			for(City to : topology.cities()) {
 				for (City next :  topology.cities()) {
 					// Check if its the same city, if so, the probability needs to be get with the null call
-					if(next.id == to.id) {
-						TransitionTable[this.states[from.id][to.id].getId()][this.numActions - 1][this.states[to.id][next.id].getId()]= td.probability(to, null);
-					}else {
-						TransitionTable[this.states[from.id][to.id].getId()][this.numActions - 1][this.states[to.id][next.id].getId()]= td.probability(to, next);
+					if(from.id != to.id) {
+						if(next.id == to.id) {
+							this.TransitionTable[this.states[from.id][to.id].getId()][this.numCities][this.states[to.id][next.id].getId()]= td.probability(to, null);
+						}else {
+							this.TransitionTable[this.states[from.id][to.id].getId()][this.numCities][this.states[to.id][next.id].getId()]= td.probability(to, next);
+						}
 					}
+					
 					
 				}
 				
@@ -172,18 +226,25 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		
 
 		
-		
+		System.out.println("Finished Building Transition Table!"); 
 	}
 		
 	public void buildRewardTable(Topology topology, TaskDistribution td, Agent agent) {
+		System.out.println("Building Reward Table ..."); 
 		RewardTable = new int[numStates][numActions]; 
-		Arrays.fill(RewardTable, 0);
-		
+		for(int i = 0; i< numStates; i++) {
+			for(int j = 0; j < numActions; j++) {
+				
+					RewardTable[i][j] = 0; 
+			}
+		}
 		// Case 1: MoveAction 
 		
 		for(City from : topology.cities()) {
 			for(City neighbor : from.neighbors()) {
-				RewardTable[this.states[from.id][neighbor.id].getId()][neighbor.id] = - td.weight(from, neighbor); 
+				
+				RewardTable[this.states[from.id][from.id].getId()][neighbor.id] = (int) (- (from.distanceTo(neighbor) * myAgent.vehicles().get(0).costPerKm())); 
+				//System.out.println("The weight of the path between " +from.id +" and " +neighbor.id+ " is "+ (int) (- (from.distanceTo(neighbor) * myAgent.vehicles().get(0).costPerKm()))); 
 			}
 		}
 		
@@ -193,119 +254,75 @@ public class ReactiveTemplate implements ReactiveBehavior {
 
 		for(City from : topology.cities()) {
 			for(City to : topology.cities()) {
-				RewardTable[this.states[from.id][to.id].getId()][numActions - 1] = td.reward(from, to) - td.weight(from, to); 
+				if(from.id != to.id){
+					RewardTable[this.states[from.id][to.id].getId()][numCities] = (td.reward(from, to)  + (int) (- (from.distanceTo(to) * myAgent.vehicles().get(0).costPerKm()))); 
+					//System.out.println("Reward for Traveling between "+ from.id + " and " +to.id+ " is " + td.reward(from, to)); 
+				}
 			}
 		}
-		
+		System.out.println("Finished Building Reward Table!"); 
 	}
 	
 	public void ValueIteration(double error) {
+		System.out.println("Starting Value Iteration ..."); 
+		this.V = new double[numStates]; 
+		this.strategy = new int[numStates]; 
+		boolean bool = true;
+		double diff = 0.0;
 		
-		int[] strategy = new int[numStates]; 
-		double max_diff = 0; 
+		// Init of Strategy and V
+		for(int s = 0; s < numStates; s++) {
+			V[s] = 1.0; 
+			this.strategy[s] = 0;
+			
+		}
 		
+		int count = 0; 
 		
-		// Init with random values, i.e 1 or something
-		
-		
-		do {
-			int[] old_strategy = strategy; 
-			// Iterate over the State Space as s
-			for(int s = 0; s < numStates ; s++) {
-				
-				double[] Q = new double[numActions];  
-				// Iterate over the Actions
-				for(int a = 0; a < numActions ; a++){
+		while(bool) {
+			count++;
+			bool = false;
+			
+			for(int s = 0; s < numStates; s++) {
+				double Q;
+				double max = Integer.MIN_VALUE;
+				int index = 0;
+				for(int a = 0; a < numActions ; a++) {
+					Q = RewardTable[s][a];
+					//System.out.println("Initial Reward is: " + Q + " for action " + a + " in State " + s);
 					
-					double res = 0;  
-					// Iterate over the State space as s'
 					for(int s_dash = 0; s_dash < numStates; s_dash++) {
-						res += TransitionTable[s][a][s_dash] * strategy[s_dash]; 
-						
-						
-					}
-				
-					Q[a] =  RewardTable[s][a] + pPickup*res; 
-					
-				}
-				
-				// Choose argmax a of Q(a) 
-				
-				// Assign it to Strategy
-				
-				int index = 0; 
-				double max = 0; 
-				
-				for(int i = 0; i < numActions; i++){
-					if(Q[i] > max) {
-						max = Q[i]; 
-						index = i; 
+						Q += discount*this.TransitionTable[s][a][s_dash]*V[s_dash];
 					}
 					
+					//System.out.println("Q is: " + Q + " for action " + a + " in State " + s);
+					if(Q>max) {
+						max = Q;
+						index = a;
+					}
+				}
+				diff = Math.abs(V[s]-max); 
+				if(diff>error) {
+					bool = true;
 				}
 				
-				// Assign V(s) with the argmax a of Q(s,a)
-				strategy[s] = index; 
-				
-				
-				
-				
+				V[s] = max;
+				strategy[s] = index;
 			}
-			// Calculate difference between previous and new strategy 
+			System.out.println("Iteration: " + count);
 			
 			
-			max_diff = 0; 
-			for(int i = 0 ; i < numStates ; i++) {
-				
-				for(int j = 0; j < numStates ; j++) {
-					if(max_diff < Math.abs(strategy[i] - old_strategy[j])) {
-						max_diff = Math.abs(strategy[i] - old_strategy[j]); 
-					
-					}
-				}
-			}
-			
-			
-			
-			
-		}while(error < max_diff); 
-			
-		VB = strategy; 
+		}
+
+		
+		
+		
+		System.out.println("Setting Optimal Strategy ...");  
+		System.out.println("Finished Value Iteration");
+		System.out.println("Ready to Roll"); 
 	}
 	
-	// Gets the index of a State and returns the best possible action
-	int policy_lookup(int state) {
-			double[] res = new double[numActions]; 
-			
-			// Compute the results for each Action 
-			for(int a = 0;a < numActions ; a++) {
-				
-				double sum = 0; 
-				// Compute the sum over s' 
-				for(int s_dash = 0 ; s_dash < numStates ; s_dash++){
-					sum += TransitionTable[state][a][s_dash]*VB[state]; 
-					
-				}
-				// Add reward and multiple with discount factor tau
-				res[a] = RewardTable[state][a] + pPickup * sum ; 
-				
-			}
-		
-			// Find the maximum of the res Array, return its index (The Associated Action) 
-			int index = 0; 
-			double max = 0; 
-			for(int i = 0; i < numActions; i++) {
-				if(res[i] > max) {
-					max = res[i]; 
-					index = i; 
-				}
-				
-			}
-		
-		return index; 
-	}
-			
-			
+
 	
 	
 	}
