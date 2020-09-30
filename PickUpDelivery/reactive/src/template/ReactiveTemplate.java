@@ -13,6 +13,9 @@ import logist.task.TaskDistribution;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 import java.util.Arrays;
+import java.io.BufferedReader; 
+import java.io.InputStreamReader; 
+import java.io.IOException;
 
 
 
@@ -39,20 +42,32 @@ public class ReactiveTemplate implements ReactiveBehavior {
 	private int[][] RewardTable; 
 
 	@Override
-	public void setup(Topology topology, TaskDistribution td, Agent agent) {
+	public void setup(Topology topology, TaskDistribution td, Agent agent){
 		
 		// Reads the discount factor from the agents.xml file.
 		// If the property is not present it defaults to 0.95
-		Double discount = agent.readProperty("discount-factor", Double.class,
-				0.95);
+		Double discount = agent.readProperty("discount-factor", Double.class, 0.95);
 		
+		// But overwrite it by user input
+        System.out.println("Please enter a discount factor: ");
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in)); 
+        try {
+			String input = reader.readLine();
+			if (0 < Double.parseDouble(input) && Double.parseDouble(input) < 1) {
+				discount = Double.parseDouble(input);
+	        }
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+        
+        System.out.println("Discount factor set to: " + discount);
+        
 		
 		this.itcount = 0; 
 		this.random = new Random();
 		this.discount = discount;
 		this.myAgent = agent;
 		this.numCities = topology.cities().size();
-
 		this.topology = topology;
 		
 		for(City from: topology.cities()) {
@@ -68,14 +83,11 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		System.out.println(Arrays.toString(strategy)); 
 		System.out.println("\n Checking in Cities ! \n "); 
 		for(City city : topology.cities()) {
-			System.out.println("Name: " +city.name+ " ID: " + city.id);
+			System.out.println("Name: " + city.name + " ID: " + city.id);
 		}
 		
-		
-		
+
 		/* 
-		
-		
 		// Summing over 
 		for(City from: topology.cities()) {
 			double sum  = 0; 
@@ -89,9 +101,7 @@ public class ReactiveTemplate implements ReactiveBehavior {
 			System.out.println("Sum over all Cities: " + sum); 
 			System.out.println("Probability of no task in the City: " + from.name + "  " +td.probability(from, null));
 			System.out.println("Sum of both: " + (sum + td.probability(from, null))); 
-			
-			
-			
+
 		}
 		System.out.println(""); 
 				
@@ -116,7 +126,6 @@ public class ReactiveTemplate implements ReactiveBehavior {
 			for(City to : topology.cities()) {
 				this.states[from.id][to.id]= new State(from, to,id);
 				id++;
-				
 			}
 			
 			
@@ -129,26 +138,26 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		Action action;
 		State current_state; 
 		// Determine the current state of the agent by looking at his current location and the possible task location
-		// Going into the state (i,i) if no task is aviable; 
+		// Going into the state (i,i) if no task is available; 
 		if(availableTask == null) {
 			current_state = states[vehicle.getCurrentCity().id][vehicle.getCurrentCity().id];
-		// Going into the state (i,j) corresponding to where the task requieres delivery	
-		}else {
+		// Going into the state (i,j) corresponding to where the task requires delivery	
+		}
+		else {
 			current_state = states[vehicle.getCurrentCity().id][availableTask.deliveryCity.id];
 		}
 		
 		int action_index = strategy[current_state.getId()]; 
 		
 		if(action_index == numCities){
-			System.out.println("I pickedUp");
+			System.out.println("I picked up a task in " + vehicle.getCurrentCity().name + ". Delivering to: " + availableTask.deliveryCity.name);
 			action = new Pickup(availableTask); 
-		}else{
-			System.out.println("I moved"); 
-			action = new Move(topology.cities().get(action_index)); 
 		}
-		
-		
-		
+		else{
+			System.out.println("Moving to city: " + topology.cities().get(action_index).name); 
+			action = new Move(topology.cities().get(action_index));
+		}
+
 		if (itcount >= 1) {
 			System.out.println("The total profit after "+numActions+" actions is "+myAgent.getTotalProfit()+" (average profit: "+(myAgent.getTotalProfit() / (double)numActions)+")");
 		}
@@ -159,14 +168,13 @@ public class ReactiveTemplate implements ReactiveBehavior {
 	
 
 	
-	
 	public void buildTransitionTable(Topology topology, TaskDistribution td, Agent agent) {
 		System.out.println("Building Transition Table ..."); 
 		this.TransitionTable = new double[numStates][numActions][numStates];
 		
 		// Arrays.fill only works for 1D arrays
 		for (int i=0; i < numStates; i++) {
-			for (int j=0; j < numActions; j++) {
+			for (int j = 0; j < numActions; j++) {
 				Arrays.fill(TransitionTable[i][j], 0);
 			}
 		}
@@ -181,27 +189,15 @@ public class ReactiveTemplate implements ReactiveBehavior {
 					for(City neighborTask : topology.cities()) {
 						if(neighbor.id != neighborTask.id) {
 							this.TransitionTable[this.states[from.id][task.id].getId()][neighbor.id][this.states[neighbor.id][neighborTask.id].getId()] = td.probability(neighbor, neighborTask); 
-						}else {
+						}
+						else {
 							this.TransitionTable[this.states[from.id][task.id].getId()][neighbor.id][this.states[neighbor.id][neighbor.id].getId()] = td.probability(neighbor, null); 
 						}
 						
 					}
-					
-					
-					
-					
 				}
-				
-				
-				
-				
 			}
-			
-			
 		}
-		
-		
-		
 		
 		// Init for the Deliver Actions
 		for(City from : topology.cities()) {
@@ -214,15 +210,10 @@ public class ReactiveTemplate implements ReactiveBehavior {
 						}else {
 							this.TransitionTable[this.states[from.id][to.id].getId()][this.numCities][this.states[to.id][next.id].getId()]= td.probability(to, next);
 						}
-					}
-					
-					
+					}	
 				}
-				
 			}
 		}
-		
-
 		
 		System.out.println("Finished Building Transition Table!"); 
 	}
@@ -232,7 +223,6 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		RewardTable = new int[numStates][numActions]; 
 		for(int i = 0; i< numStates; i++) {
 			for(int j = 0; j < numActions; j++) {
-				
 					RewardTable[i][j] = 0; 
 			}
 		} 
@@ -240,16 +230,12 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		// Case 1: MoveAction 
 		for(City from : topology.cities()) {
 			for(City neighbor : from.neighbors()) {
-				
 				RewardTable[this.states[from.id][from.id].getId()][neighbor.id] = (int) (- (from.distanceTo(neighbor) * myAgent.vehicles().get(0).costPerKm())); 
 				//System.out.println("The weight of the path between " +from.id +" and " +neighbor.id+ " is "+ (int) (- (from.distanceTo(neighbor) * myAgent.vehicles().get(0).costPerKm()))); 
 			}
 		}
 		
-		
-		
 		// Case 2: PickUpAndDeliver 
-
 		for(City from : topology.cities()) {
 			for(City to : topology.cities()) {
 				if(from.id != to.id){
@@ -294,13 +280,13 @@ public class ReactiveTemplate implements ReactiveBehavior {
 					}
 					
 					//System.out.println("Q is: " + Q + " for action " + a + " in State " + s);
-					if(Q>max) {
+					if(Q > max) {
 						max = Q;
 						index = a;
 					}
 				}
-				diff = Math.abs(V[s]-max); 
-				if(diff>error) {
+				diff = Math.abs(V[s] - max); 
+				if(diff > error) {
 					bool = true;
 				}
 				
@@ -308,21 +294,12 @@ public class ReactiveTemplate implements ReactiveBehavior {
 				strategy[s] = index;
 			}
 			System.out.println("Iteration: " + count);
-			
-			
 		}
 
-		
-		
-		
 		System.out.println("Setting Optimal Strategy ...");  
 		System.out.println("Finished Value Iteration");
 		System.out.println("Ready to Roll"); 
 	}
-	
-
-	
-	
 	}
 			
 			
