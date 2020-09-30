@@ -22,6 +22,7 @@ import java.io.IOException;
 public class ReactiveTemplate implements ReactiveBehavior {
 
 	private Random random;
+	private final double error_margin = 0.0000000000001; 
 	private double pPickup;
 	private Double discount;
 	private int numActions;
@@ -73,41 +74,23 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		for(City from: topology.cities()) {
 			System.out.println("City: " + from.name +" has ID:  "+ from.id ) ; 
 		}
+		
 		initStates();
 		initActions();
 		buildTransitionTable(topology, td, agent);
 		buildRewardTable(topology, td, agent);
-		ValueIteration(discount);
+		
+		// Calling Value Iteration with the predefined maximum error margin
+		ValueIteration(error_margin);
 		
 		System.out.println("The Strategy is: ");
 		System.out.println(Arrays.toString(strategy)); 
-		System.out.println("\n Checking in Cities ! \n "); 
+		System.out.println("\n Checking in Cities \n "); 
+		
 		for(City city : topology.cities()) {
 			System.out.println("Name: " + city.name + " ID: " + city.id);
 		}
 		
-
-		/* 
-		// Summing over 
-		for(City from: topology.cities()) {
-			double sum  = 0; 
-			System.out.println(from.name); 
-			for(City to: topology.cities()) {
-
-				System.out.println("Probability of going from: "+from.name + " to "+  to.name); 
-				System.out.println(td.probability(from, to)); 
-				sum += td.probability(from, to); 
-			}
-			System.out.println("Sum over all Cities: " + sum); 
-			System.out.println("Probability of no task in the City: " + from.name + "  " +td.probability(from, null));
-			System.out.println("Sum of both: " + (sum + td.probability(from, null))); 
-
-		}
-		System.out.println(""); 
-				
-				
-		System.out.println("");
-		*/ 
 	}
 
 
@@ -253,6 +236,9 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		this.strategy = new int[numStates]; 
 		boolean bool = true;
 		double diff = 0.0;
+		double Q; 
+		double max;
+		
 		
 		// Init of Strategy and V
 		for(int s = 0; s < numStates; s++) {
@@ -268,9 +254,10 @@ public class ReactiveTemplate implements ReactiveBehavior {
 			bool = false;
 			
 			for(int s = 0; s < numStates; s++) {
-				double Q;
-				double max = Double.MIN_VALUE;
+				
+				max = Double.MIN_VALUE;
 				int index = 0;
+				
 				for(int a = 0; a < numActions ; a++) {
 					Q = RewardTable[s][a];
 					//System.out.println("Initial Reward is: " + Q + " for action " + a + " in State " + s);
@@ -280,9 +267,10 @@ public class ReactiveTemplate implements ReactiveBehavior {
 					}
 					
 					//System.out.println("Q is: " + Q + " for action " + a + " in State " + s);
-					if(Q > max) {
-						max = Q;
+
+					if(Q>max) {
 						index = a;
+						max = Q;
 					}
 				}
 				diff = Math.abs(V[s] - max); 
