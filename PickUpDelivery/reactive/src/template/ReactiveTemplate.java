@@ -101,7 +101,7 @@ public class ReactiveTemplate implements ReactiveBehavior {
 	}
 
 	private void initStates() {
-		System.out.println("Initalizing State Space ..."); 
+		System.out.println("Initalizing State Space ...");
 		this.numStates = this.numCities * this.numCities;
 		this.states = new State[this.numCities][this.numCities];
 		int id = 0; 
