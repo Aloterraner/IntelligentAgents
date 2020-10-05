@@ -35,8 +35,6 @@ public class ReactiveTemplate implements ReactiveBehavior {
 	private TaskDistribution TD; 
 	private int itcount; 
 	private int[] strategy;
-
-	
 	// T(s,a,s'), returns the Probability to go from state s to state s' when taking action a. 
 	private double[][][] TransitionTable; 
 	// R(s,a) returns the Expected reward when taking Action a in state s
@@ -49,7 +47,7 @@ public class ReactiveTemplate implements ReactiveBehavior {
 		// If the property is not present it defaults to 0.95
 		Double discount = agent.readProperty("discount-factor", Double.class, 0.95);
 		
-		// But overwrite it by user input
+		// But overwrite it if user inputs different values
         System.out.println("Please enter a discount factor: ");
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in)); 
         try {
@@ -218,7 +216,7 @@ public class ReactiveTemplate implements ReactiveBehavior {
 			}
 		}
 		
-		// Case 2: PickUpAndDeliver 
+		// Case 2: PickUpAndDelivery
 		for(City from : topology.cities()) {
 			for(City to : topology.cities()) {
 				if(from.id != to.id){
