@@ -1,6 +1,8 @@
 package template;
 
 /* import table */
+import template.AstarPlan;
+import template.BFSPlan;
 import logist.simulation.Vehicle;
 import logist.agent.Agent;
 import logist.behavior.DeliberativeBehavior;
@@ -17,7 +19,7 @@ import logist.topology.Topology.City;
 @SuppressWarnings("unused")
 public class DeliberativeTemplate implements DeliberativeBehavior {
 
-	enum Algorithm { BFS, ASTAR }
+	enum Algorithm { BFS, ASTAR, NAIVE}
 	
 	/* Environment */
 	Topology topology;
@@ -54,10 +56,13 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		switch (algorithm) {
 		case ASTAR:
 			// ...
-			plan = naivePlan(vehicle, tasks);
+			plan = astarPlan(vehicle, tasks);
 			break;
 		case BFS:
 			// ...
+			plan = bfsPlan(vehicle, tasks);
+			break;
+		case NAIVE:
 			plan = naivePlan(vehicle, tasks);
 			break;
 		default:
@@ -65,6 +70,29 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		}		
 		return plan;
 	}
+	
+	private Plan astarPlan(Vehicle vehicle, TaskSet tasks) {
+		/*
+		 * Generates a plan using the A*.
+		 */
+		City current = vehicle.getCurrentCity();
+		Plan plan = new AstarPlan(vehicle, current, tasks);
+
+		
+		return plan;
+	}
+	
+	private Plan bfsPlan(Vehicle vehicle, TaskSet tasks) {
+		/*
+		 * Generates a plan using BFS.
+		 */
+		City current = vehicle.getCurrentCity();
+		Plan plan = new BFSPlan(vehicle, current, tasks);
+
+		
+		return plan;
+	}
+	
 	
 	private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
 		City current = vehicle.getCurrentCity();
@@ -87,6 +115,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 			current = task.deliveryCity;
 		}
 		return plan;
+		
 	}
 
 	@Override
