@@ -2,6 +2,15 @@ package template;
 
 /* import table */
 import logist.simulation.Vehicle;
+
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Stack;
+import java.util.PriorityQueue;
+import java.util.Queue;
+
 import logist.agent.Agent;
 import logist.behavior.DeliberativeBehavior;
 import logist.plan.Plan;
@@ -36,6 +45,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		this.td = td;
 		this.agent = agent;
 		
+		
 		// initialize the planner
 		int capacity = agent.vehicles().get(0).capacity();
 		String algorithmName = agent.readProperty("algorithm", String.class, "ASTAR");
@@ -54,11 +64,11 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		switch (algorithm) {
 		case ASTAR:
 			// ...
-			plan = naivePlan(vehicle, tasks);
+			plan = aStar_Plan(vehicle, tasks);
 			break;
 		case BFS:
 			// ...
-			plan = naivePlan(vehicle, tasks);
+			plan = BFS_Plan(vehicle, tasks);
 			break;
 		default:
 			throw new AssertionError("Should not happen.");
@@ -98,4 +108,275 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 			// plan is computed.
 		}
 	}
+	
+	
+	private Plan BFS_Plan(Vehicle vehicle, TaskSet tasks) {
+		
+		State.acceptedTask = tasks; 
+		
+		TaskSet deliveryTask = TaskSet.noneOf(tasks);
+		TaskSet pickedTask = TaskSet.noneOf(tasks); 
+		
+		State initState = new State(vehicle.getCurrentCity(), pickedTask, deliveryTask);
+		
+		System.out.println("Checking Equality"); 
+		Node initNode = new Node(initState, null, 0.0);
+		initState = new State(vehicle.getCurrentCity(), TaskSet.noneOf(tasks), TaskSet.noneOf(tasks));
+		
+		Node checkNode = new Node(initState, null, 0.0); 
+		
+		
+		Node finalNode = new Node(new State(vehicle.getCurrentCity(), deliveryTask, tasks), null ,0.0); 
+		
+		
+		HashSet<Node> test = new HashSet<Node>(); 
+		test.add(finalNode); 
+		test.add(checkNode);
+		
+		System.out.println(" The initnode is already in the Set:  " +test.contains(initNode)); 
+		System.out.println(" The checknode is already in the Set: " +test.contains(checkNode)); 
+		
+		
+		System.out.println("Test if GoalState works: " + finalNode.getState().isGoalState()); 
+		System.out.println("Check if both nodes are equal: " + initNode.equals(checkNode)); 
+		for(Node node : successor(initNode, vehicle)) System.out.println(node.toString());
+		
+		
+		System.out.println("Starting Search ...");
+		HashSet<Node> GoalNodes = BFS_Search(initNode, vehicle); 
+		System.out.println("Finished Search");
+		// Find the optimal Node
+		
+		System.out.println("Goal Nodes: " + GoalNodes.toString() );
+		// Select the GoalNode with the lowest overall Costs
+		double min = Double.MAX_VALUE; 
+		Node optimal_node = null; 
+		
+		
+		for(Node node : GoalNodes) {
+			
+			if(node.getCost() < min) {
+				min = node.getCost();
+				optimal_node = node; 
+			}			
+			
+		}
+		
+		System.out.println("Found Optimal Node with cost: " + optimal_node.getCost());
+		
+		System.out.println("Compute plan from optimal node"); 
+		
+		Stack<Node> nodes = new Stack<Node>();
+		
+		Node pred = optimal_node; 
+		
+		// Push all nodes on a stack, so the first element is the start node
+		do {
+			
+			nodes.push(pred); 
+			pred = pred.getPredecssesor();
+			
+		}while(pred != null); 
+		
+		
+		// Start processing
+		System.out.println("Identifiying associated Actions");
+		
+		
+		
+		
+		
+		
+		
+		return null; 
+		
+	}
+	
+	private HashSet<Node> BFS_Search(Node initNode, Vehicle vehicle) {
+		Deque<Node> Q = new LinkedList<Node>(); 
+		HashSet<Node> GoalNodes = new HashSet<Node>();
+		HashSet<Node> C = new HashSet<Node>(); 
+		int count = 0; 
+		
+		Node n; 
+		Q.add(initNode);
+		
+		
+		do {
+			// n = first(Q), Q <- Rest(Q)
+			n = Q.pop();
+			if(count < 500 ) {
+				System.out.println(n.toString()); 
+			}
+			
+			// n's state is a Goal State, add it to the goal states
+			
+			if (n.getState().isGoalState()) {
+				GoalNodes.add(n); 
+				System.out.println("Found a Goal State"); 
+				
+				
+			// Check for Cycle, if not proceed with successor, prevent fall through from Goalstates as this would lead to
+		    // non-termination if succ of Goal state would be considered, as all possible succ() would be equally Goal States
+			}else if(!C.contains(n)){
+			
+				C.add(n); 
+				
+				// succ(n)
+				ArrayList<Node> S = successor(n, vehicle);
+				
+				// Append(Q,S) as in Lecture Slide 18/56
+				Q.addAll(S);		
+				
+		
+			}
+			
+			if(count % 5000  == 0) {
+				System.out.println("Iteration: " + count); 
+			}
+			
+			count++; 
+		}while(!Q.isEmpty());
+		
+		
+		
+		return GoalNodes; 
+		
+	}
+	
+	
+	private Plan aStar_Plan(Vehicle vehicle, TaskSet tasks) {
+		
+		PriorityQueue<Node> Q = new PriorityQueue<Node>(); 
+		HashSet<Node> GoalNodes = new HashSet<Node>();
+		HashSet<Node> C = new HashSet<Node>(); 
+		int count = 0; 
+		
+		Node n; 
+		//Q.add(initNode);
+		
+		
+		do {
+			// n = first(Q), Q <- Rest(Q)
+			//n = Q.remove(0);
+			if(count < 5000 ) {
+				System.out.println(n.toString()); 
+			}
+			
+			// n's state is a Goal State, add it to the goal states
+			
+			if (n.getState().isGoalState()) {
+				GoalNodes.add(n); 
+				System.out.println("Found a Goal State"); 
+				
+				
+			// Check for Cycle, if not proceed with successor, prevent fall through from Goalstates as this would lead to
+		    // non-termination if succ of Goal state would be considered, as all possible succ() would be equally Goal States
+			}else if(!C.contains(n)){
+			
+				C.add(n); 
+				
+				// succ(n)
+				ArrayList<Node> S = successor(n, vehicle);
+				
+				// Append(Q,S) as in Lecture Slide 18/56
+				Q.addAll(S);		
+				
+		
+			}
+			
+			if(count % 5000  == 0) {
+				System.out.println("Iteration: " + count); 
+			}
+			
+			count++; 
+		}while(!Q.isEmpty());
+		
+		
+		
+		return GoalNodes; 
+		
+		
+	}
+	
+	
+	private  ArrayList<Node> successor(Node n, Vehicle vehicle){
+		
+		ArrayList<Node> S = new ArrayList<Node>(); 
+		State curr_state = n.getState(); 
+		TaskSet tasks = State.acceptedTask; 
+		double cost; 
+		State succ_state; 
+		
+		
+		TaskSet deliverable_tasks = TaskSet.noneOf(State.getAcceptedTask()); 
+		TaskSet pickable_tasks = TaskSet.noneOf(State.getAcceptedTask());
+		TaskSet availableTasks = TaskSet.intersectComplement(tasks, TaskSet.union(curr_state.getDeliveredTask(), curr_state.getPickedUpTask())); 
+		
+		//System.out.println("Available Tasks: " + availableTasks.toString()); 
+		
+		// Check, which not yet PickedUp Task might be picked up in this city (AviableTasks intersected with all not yet delievered Tasks)
+		
+		for(Task task : TaskSet.intersectComplement(availableTasks, curr_state.getDeliveredTask())){
+			
+			// Add a Task to be PickUpable in a City, if we are in the correct city and the overall Sum of weight, does not exceed our capacity
+			if(task.pickupCity == curr_state.getCurrent() && vehicle.capacity()  > (curr_state.getPickedUpTask().weightSum() + task.weight)) {
+				pickable_tasks.add(task);
+			}
+		}
+		
+		
+		//System.out.println("Pickable Tasks: " + pickable_tasks.toString()); 
+		
+		
+		// Check, which not yet Delivered Task might be delivered in this city 
+		for(Task task : curr_state.getPickedUpTask()){
+			if(task.deliveryCity == curr_state.getCurrent()){
+				deliverable_tasks.add(task);
+			}
+		}
+		
+		
+		// All possible Successor States, if we choose to PickUp a pickable Task
+		
+		// Might improve on this by selecting a set of all possibly pickUpable States 
+		for(Task task : pickable_tasks) {
+			
+			
+			// Create a new TaskSet for PickedUp Actions plus the PickedUp task
+
+			TaskSet new_pickedup = curr_state.getPickedUpTask().clone(); 
+			new_pickedup.add(task); 
+			
+			// Create the new corresponding state object
+			succ_state = new State(curr_state.getCurrent(), new_pickedup, TaskSet.union(deliverable_tasks, n.getState().getDeliveredTask()));  
+			
+			// The cost is identical for this action, as no movement is involved
+			cost = n.getCost(); 
+			
+			// Add the new node to the successors
+			S.add(new Node(succ_state, n, cost)); 
+		}
+		
+		// All possible Successor State, if we choose to Move to City X
+		for(City next : curr_state.getCurrent().neighbors()) {
+			
+				// The costs equals the cost of the previous node, plus the cost of movement to the new state
+				cost = n.getCost() + (curr_state.getCurrent().distanceTo(next) * vehicle.costPerKm());
+				
+				succ_state = new State(next, curr_state.getPickedUpTask(), TaskSet.union(deliverable_tasks, n.getState().getDeliveredTask()));  
+				
+				// Add the new node to the successors
+				S.add(new Node(succ_state, n, cost));
+		}
+		
+		
+		return S;
+		
+		
+	}
+	
+	
+	
+	
 }
