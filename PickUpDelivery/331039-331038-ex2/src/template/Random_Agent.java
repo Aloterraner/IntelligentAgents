@@ -1,5 +1,8 @@
 package template;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Random;
 
 import logist.simulation.Vehicle;
@@ -22,11 +25,28 @@ public class Random_Agent implements ReactiveBehavior {
 
 	@Override
 	public void setup(Topology topology, TaskDistribution td, Agent agent) {
-
-		// Reads the discount factor from the agents.xml file.
-		// If the property is not present it defaults to 0.95
-		Double discount = agent.readProperty("discount-factor", Double.class,
-				0.95);
+		
+		System.out.println("Running the random agent.");
+		Double discount = 0.0;
+		
+		// But overwrite it if user inputs different values
+        System.out.println("Please enter a discount factor: ");
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in)); 
+        try {
+			String input = reader.readLine();
+			if (input.isEmpty()) {
+				// Reads the discount factor from the agents.xml file.
+				// If the property is not present it defaults to 0.95
+				discount = agent.readProperty("discount-factor", Double.class, 0.95);
+			}
+			else if (0 < Double.parseDouble(input) && Double.parseDouble(input) < 1) {
+				discount = Double.parseDouble(input);
+	        }
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+        
+        System.out.println("Discount factor set to: " + discount);
 
 		this.random = new Random();
 		this.pPickup = discount;

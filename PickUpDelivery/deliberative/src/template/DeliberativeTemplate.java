@@ -1,6 +1,8 @@
 package template;
 
 /* import table */
+import template.AstarPlan;
+import template.BFSPlan;
 import logist.simulation.Vehicle;
 
 import java.util.ArrayList;
@@ -26,7 +28,7 @@ import logist.topology.Topology.City;
 @SuppressWarnings("unused")
 public class DeliberativeTemplate implements DeliberativeBehavior {
 
-	enum Algorithm { BFS, ASTAR }
+	enum Algorithm { BFS, ASTAR, NAIVE}
 	
 	/* Environment */
 	Topology topology;
@@ -69,12 +71,16 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		case BFS:
 			// ...
 			plan = BFS_Plan(vehicle, tasks);
+
 			break;
 		default:
 			throw new AssertionError("Should not happen.");
 		}		
 		return plan;
 	}
+	
+
+	
 	
 	private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
 		City current = vehicle.getCurrentCity();
@@ -97,6 +103,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 			current = task.deliveryCity;
 		}
 		return plan;
+		
 	}
 
 	@Override
