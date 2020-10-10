@@ -73,6 +73,9 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 			plan = BFS_Plan(vehicle, tasks);
 
 			break;
+		case NAIVE:
+			plan = naivePlan(vehicle, tasks);
+			break;
 		default:
 			throw new AssertionError("Should not happen.");
 		}		
@@ -189,12 +192,6 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		// Start processing
 		System.out.println("Identifiying associated Actions");
 		
-		
-		
-		
-		
-		
-		
 		return null; 
 		
 	}
@@ -212,11 +209,13 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		do {
 			// n = first(Q), Q <- Rest(Q)
 			n = Q.pop();
-			if(count < 500 ) {
+			if(count < 5000) {
 				System.out.println(n.toString()); 
 			}
 			
 			// n's state is a Goal State, add it to the goal states
+			
+			System.out.println(C.contains(n));
 			
 			if (n.getState().isGoalState()) {
 				GoalNodes.add(n); 
@@ -253,29 +252,92 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 	
 	
 	private Plan aStar_Plan(Vehicle vehicle, TaskSet tasks) {
+
+		State.acceptedTask = tasks; 
 		
+		TaskSet deliveryTask = TaskSet.noneOf(tasks);
+		TaskSet pickedTask = TaskSet.noneOf(tasks); 
+		
+		State initState = new State(vehicle.getCurrentCity(), pickedTask, deliveryTask);
+		
+		System.out.println("Checking Equality"); 
+		Node initNode = new Node(initState, null, 0.0);
+		initState = new State(vehicle.getCurrentCity(), TaskSet.noneOf(tasks), TaskSet.noneOf(tasks));
+		
+		Node checkNode = new Node(initState, null, 0.0); 
+		
+		
+		Node finalNode = new Node(new State(vehicle.getCurrentCity(), deliveryTask, tasks), null ,0.0); 
+		
+		
+		HashSet<Node> test = new HashSet<Node>(); 
+		test.add(finalNode); 
+		test.add(checkNode);
+		
+		System.out.println(" The initnode is already in the Set:  " +test.contains(initNode)); 
+		System.out.println(" The checknode is already in the Set: " +test.contains(checkNode)); 
+		
+		
+		System.out.println("Test if GoalState works: " + finalNode.getState().isGoalState()); 
+		System.out.println("Check if both nodes are equal: " + initNode.equals(checkNode)); 
+		for(Node node : successor(initNode, vehicle)) System.out.println(node.toString());
+		
+		
+		System.out.println("Starting Search ...");
+		Node optimal_node = ASTAR_Search(initNode, vehicle); 
+		System.out.println("Finished Search");
+		// Find the optimal Node
+		
+		System.out.println("Found Optimal Node with cost: " + optimal_node.getCost());
+		
+		System.out.println("Compute plan from optimal node"); 
+		
+		Stack<Node> nodes = new Stack<Node>();
+		
+		Node pred = optimal_node; 
+		
+		// Push all nodes on a stack, so the first element is the start node
+		do {
+			
+			nodes.push(pred); 
+			pred = pred.getPredecssesor();
+			
+		}while(pred != null); 
+		
+		
+		// Start processing
+		System.out.println("Identifiying associated Actions");
+		
+		return null; 
+		
+		
+	}
+	
+	private Node ASTAR_Search(Node initNode, Vehicle vehicle) {
 		PriorityQueue<Node> Q = new PriorityQueue<Node>(); 
-		HashSet<Node> GoalNodes = new HashSet<Node>();
 		HashSet<Node> C = new HashSet<Node>(); 
 		int count = 0; 
 		
 		Node n; 
-		//Q.add(initNode);
+		Q.add(initNode);
 		
 		
 		do {
-			// n = first(Q), Q <- Rest(Q)
-			//n = Q.remove(0);
-			if(count < 5000 ) {
+			//n = first(Q), Q <- Rest(Q)
+			n = Q.poll();
+
+			
+			if(count < 500 ) {
 				System.out.println(n.toString()); 
 			}
 			
 			// n's state is a Goal State, add it to the goal states
 			
 			if (n.getState().isGoalState()) {
-				GoalNodes.add(n); 
-				System.out.println("Found a Goal State"); 
 				
+
+				System.out.println("Found a Goal State"); 
+				return n;
 				
 			// Check for Cycle, if not proceed with successor, prevent fall through from Goalstates as this would lead to
 		    // non-termination if succ of Goal state would be considered, as all possible succ() would be equally Goal States
@@ -289,7 +351,6 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 				// Append(Q,S) as in Lecture Slide 18/56
 				Q.addAll(S);		
 				
-		
 			}
 			
 			if(count % 5000  == 0) {
@@ -300,10 +361,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		}while(!Q.isEmpty());
 		
 		
-		
-		return GoalNodes; 
-		
-		
+		return null; 
 	}
 	
 	
@@ -324,7 +382,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		
 		// Check, which not yet PickedUp Task might be picked up in this city (AviableTasks intersected with all not yet delievered Tasks)
 		
-		for(Task task : TaskSet.intersectComplement(availableTasks, curr_state.getDeliveredTask())){
+		for(Task task : availableTasks){
 			
 			// Add a Task to be PickUpable in a City, if we are in the correct city and the overall Sum of weight, does not exceed our capacity
 			if(task.pickupCity == curr_state.getCurrent() && vehicle.capacity()  > (curr_state.getPickedUpTask().weightSum() + task.weight)) {
@@ -344,6 +402,8 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		}
 		
 		
+		TaskSet current_load = TaskSet.intersectComplement(curr_state.getPickedUpTask(), deliverable_tasks);
+		
 		// All possible Successor States, if we choose to PickUp a pickable Task
 		
 		// Might improve on this by selecting a set of all possibly pickUpable States 
@@ -352,11 +412,11 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 			
 			// Create a new TaskSet for PickedUp Actions plus the PickedUp task
 
-			TaskSet new_pickedup = curr_state.getPickedUpTask().clone(); 
+			TaskSet new_pickedup = current_load.clone(); 
 			new_pickedup.add(task); 
 			
 			// Create the new corresponding state object
-			succ_state = new State(curr_state.getCurrent(), new_pickedup, TaskSet.union(deliverable_tasks, n.getState().getDeliveredTask()));  
+			succ_state = new State(curr_state.getCurrent(), new_pickedup, TaskSet.union(deliverable_tasks, curr_state.getDeliveredTask()));  
 			
 			// The cost is identical for this action, as no movement is involved
 			cost = n.getCost(); 
@@ -371,7 +431,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 				// The costs equals the cost of the previous node, plus the cost of movement to the new state
 				cost = n.getCost() + (curr_state.getCurrent().distanceTo(next) * vehicle.costPerKm());
 				
-				succ_state = new State(next, curr_state.getPickedUpTask(), TaskSet.union(deliverable_tasks, n.getState().getDeliveredTask()));  
+				succ_state = new State(next, current_load, TaskSet.union(deliverable_tasks, n.getState().getDeliveredTask()));  
 				
 				// Add the new node to the successors
 				S.add(new Node(succ_state, n, cost));
