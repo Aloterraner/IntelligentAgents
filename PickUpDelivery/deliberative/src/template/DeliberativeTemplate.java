@@ -267,21 +267,9 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		
 		System.out.println("Compute plan from optimal node"); 
 		
-		Stack<Node> nodes = new Stack<Node>();
+		Plan plan = parse_Plan(optimal_node);
 		
-		Node pred = optimal_node; 
-		
-		// Push all nodes on a stack, so the first element is the start node
-		do {
-			nodes.push(pred); 
-			pred = pred.getPredecssesor();
-			
-		} while(pred != null); 
-		
-		// Start processing
-		System.out.println("Identifiying associated Actions");
-		
-		return null; 
+		return plan; 
 	}
 	
 	private Node ASTAR_Search(Node initNode, Vehicle vehicle) {
