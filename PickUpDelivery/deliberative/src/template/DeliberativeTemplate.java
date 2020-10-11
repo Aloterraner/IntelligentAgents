@@ -15,6 +15,7 @@ import java.util.Queue;
 
 import logist.agent.Agent;
 import logist.behavior.DeliberativeBehavior;
+import logist.plan.Action;
 import logist.plan.Plan;
 import logist.task.Task;
 import logist.task.TaskDistribution;
@@ -263,46 +264,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		//Q.add(initNode);
 		
 		
-		do {
-			// n = first(Q), Q <- Rest(Q)
-			//n = Q.remove(0);
-			if(count < 5000 ) {
-				System.out.println(n.toString()); 
-			}
-			
-			// n's state is a Goal State, add it to the goal states
-			
-			if (n.getState().isGoalState()) {
-				GoalNodes.add(n); 
-				System.out.println("Found a Goal State"); 
-				
-				
-			// Check for Cycle, if not proceed with successor, prevent fall through from Goalstates as this would lead to
-		    // non-termination if succ of Goal state would be considered, as all possible succ() would be equally Goal States
-			}else if(!C.contains(n)){
-			
-				C.add(n); 
-				
-				// succ(n)
-				ArrayList<Node> S = successor(n, vehicle);
-				
-				// Append(Q,S) as in Lecture Slide 18/56
-				Q.addAll(S);		
-				
-		
-			}
-			
-			if(count % 5000  == 0) {
-				System.out.println("Iteration: " + count); 
-			}
-			
-			count++; 
-		}while(!Q.isEmpty());
-		
-		
-		
-		return GoalNodes; 
-		
+		return new Plan(vehicle.getCurrentCity()); 		
 		
 	}
 	
@@ -379,6 +341,64 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		
 		
 		return S;
+		
+		
+	}
+	
+	public Plan process_search_tree(Stack<Node> stack, Vehicle vehicle ) {
+		
+		Node previous_node = stack.pop();
+		Node current_node; 
+		
+		State previous_state; 
+		State current_state; 
+		
+		TaskSet deliveries; 
+		TaskSet pickedUps; 
+		
+		Plan plan = new Plan(vehicle.getCurrentCity()); 
+		
+		while(!stack.isEmpty()) {
+			
+			current_node = stack.pop(); 
+			
+			previous_state = previous_node.getState();
+			current_state = current_node.getState();
+			
+			deliveries = TaskSet.noneOf(State.acceptedTask); 
+			pickedUps = TaskSet.noneOf(State.acceptedTask); 
+			
+			// Check for new Deliveries
+			
+			deliveries = TaskSet.intersectComplement(current_state.getDeliveredTask(), previous_state.getDeliveredTask());
+			
+			for(Task task : deliveries){
+				plan.appendDelivery(task);	
+			}
+			
+			// Check for new Pickup 
+			
+			pickedUps = TaskSet.intersectComplement(current_state.getPickedUpTask(), previous_state.getPickedUpTask());
+			
+			for(Task task : pickedUps) {
+				plan.appendPickup(task);
+			}
+			
+			
+			
+			// Check for Move
+			if(!(current_state.getCurrent().equals(previous_state.getCurrent()))){
+				plan.appendMove(current_state.getCurrent());
+			}
+			
+			
+		}
+		
+		
+		
+		return plan;
+		
+		
 		
 		
 	}
