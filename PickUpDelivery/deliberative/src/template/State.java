@@ -16,27 +16,16 @@ public class State {
 	// the aviable Task (Not yet delivered, Not yet PickedUp)
 	// the pickedUp Task  
 	// the delivered Task
-	// 
-	
 	public State(City current, TaskSet pickedUpTask, TaskSet deliveredTask) {
-		
 		this.current = current;
 		this.pickedUpTask = pickedUpTask;
 		this.deliveredTask = deliveredTask; 
-
-		
 	}
 	
 	// Returns true if the state is an endstate, a state with no aviableTask and no pickedUpTask, i.e all Task have been successfully delivered
 	public boolean isGoalState() {
-		
-		
-		
-		return (this.deliveredTask.equals(State.acceptedTask) && this.pickedUpTask.isEmpty()); 
-		
+		return (this.deliveredTask.equals(State.acceptedTask) && this.pickedUpTask.isEmpty()); 	
 	} 
-		
-	
 	
 	public City getCurrent() {
 		return current;
@@ -72,7 +61,6 @@ public class State {
 	
 	@Override
 	public boolean equals (Object o) {
-		
 		
 		if(this.current.equals(((State)o).current)) {
 			

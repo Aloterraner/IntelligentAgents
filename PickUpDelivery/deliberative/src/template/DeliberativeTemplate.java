@@ -54,8 +54,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		
 		// Throws IllegalArgumentException if algorithm is unknown
 		algorithm = Algorithm.valueOf(algorithmName.toUpperCase());
-		
-		// ...
+
 	}
 	
 	@Override
@@ -65,13 +64,10 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		// Compute the plan with the selected algorithm.
 		switch (algorithm) {
 		case ASTAR:
-			// ...
 			plan = aStar_Plan(vehicle, tasks);
 			break;
 		case BFS:
-			// ...
 			plan = BFS_Plan(vehicle, tasks);
-
 			break;
 		case NAIVE:
 			plan = naivePlan(vehicle, tasks);
@@ -81,9 +77,6 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		}		
 		return plan;
 	}
-	
-
-	
 	
 	private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
 		City current = vehicle.getCurrentCity();
@@ -118,7 +111,6 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 			// plan is computed.
 		}
 	}
-	
 	
 	private Plan BFS_Plan(Vehicle vehicle, TaskSet tasks) {
 		
@@ -174,25 +166,9 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		
 		System.out.println("Found Optimal Node with cost: " + optimal_node.getCost());
 		
-		System.out.println("Compute plan from optimal node"); 
+		Plan plan = parse_Plan(optimal_node);
 		
-		Stack<Node> nodes = new Stack<Node>();
-		
-		Node pred = optimal_node; 
-		
-		// Push all nodes on a stack, so the first element is the start node
-		do {
-			
-			nodes.push(pred); 
-			pred = pred.getPredecssesor();
-			
-		}while(pred != null); 
-		
-		
-		// Start processing
-		System.out.println("Identifiying associated Actions");
-		
-		return null; 
+		return plan; 
 		
 	}
 	
@@ -250,7 +226,6 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		
 	}
 	
-	
 	private Plan aStar_Plan(Vehicle vehicle, TaskSet tasks) {
 
 		State.acceptedTask = tasks; 
@@ -298,19 +273,15 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		
 		// Push all nodes on a stack, so the first element is the start node
 		do {
-			
 			nodes.push(pred); 
 			pred = pred.getPredecssesor();
 			
-		}while(pred != null); 
-		
+		} while(pred != null); 
 		
 		// Start processing
 		System.out.println("Identifiying associated Actions");
 		
 		return null; 
-		
-		
 	}
 	
 	private Node ASTAR_Search(Node initNode, Vehicle vehicle) {
@@ -363,7 +334,6 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		
 		return null; 
 	}
-	
 	
 	private  ArrayList<Node> successor(Node n, Vehicle vehicle){
 		
@@ -437,13 +407,60 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 				S.add(new Node(succ_state, n, cost));
 		}
 		
-		
 		return S;
-		
 		
 	}
 	
-	
-	
-	
+	private Plan parse_Plan(Node optimal_node) {
+		System.out.println("Compute plan from optimal node"); 
+		
+		Stack<Node> nodes = new Stack<Node>();
+		
+		Node pred = optimal_node; 
+		
+		// Push all nodes on a stack, so the first element is the start node
+		do {
+			nodes.push(pred); 
+			pred = pred.getPredecssesor();
+			
+		} while(pred != null); 
+		
+		
+		// Start processing
+		System.out.println("Identifiying associated Actions");
+		
+		Node cur_node;
+		Node next_node = nodes.pop();
+		Plan plan = new Plan(next_node.getState().getCurrent()); // intialize plan with starting city
+		
+		while (nodes.size() > 0) {
+			cur_node = next_node;
+			next_node = nodes.pop();
+			
+			// check for delivery first
+			if (!cur_node.getState().getDeliveredTask().equals(next_node.getState().getDeliveredTask())) {
+				TaskSet delivered_tasks = TaskSet.intersectComplement(next_node.getState().getDeliveredTask(), cur_node.getState().getDeliveredTask());
+				for (Task task : delivered_tasks) {
+					plan.appendDelivery(task);
+				}
+			}
+			
+			// check for pickup 
+			if (!cur_node.getState().getPickedUpTask().equals(next_node.getState().getPickedUpTask())) {
+				TaskSet pickedup_tasks = TaskSet.intersectComplement(next_node.getState().getPickedUpTask(), cur_node.getState().getPickedUpTask());
+				for (Task task: pickedup_tasks) {
+					plan.appendPickup(task);
+				}
+			}
+			
+			// check for move
+			if (cur_node.getState().getCurrent() != next_node.getState().getCurrent()) {
+				plan.appendMove(next_node.getState().getCurrent());
+			}
+			
+			System.out.println(plan);
+			
+		}
+		return plan;
+	}
 }

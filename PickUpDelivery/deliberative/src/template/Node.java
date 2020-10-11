@@ -18,26 +18,14 @@ public class Node implements Comparable<Node>{
 	// The cost of reaching the node
 	private double cost;
 
-
-
-
-
+	
 	public Node(State state, Node pred, double cost) {
 		
 		this.setState(state); 
 		this.setPredecssesor(pred); 
 		this.setCost(cost);
-		
 	}
 	
-
-	
-	public int getH_cost() {
-		
-		
-		return 0; 
-	}
-
 	
 	public State getState() {
 		return state;
@@ -80,8 +68,6 @@ public class Node implements Comparable<Node>{
 					
 		}
 		
-		
-		
 		return false;
 		
 		
@@ -110,7 +96,6 @@ public class Node implements Comparable<Node>{
 			return 0;
 		}
 	}
-
 
 
 	public double heuristic(Node n) {
