@@ -1,6 +1,8 @@
 package template;
 import java.lang.Comparable;
 
+import logist.task.TaskSet;
+
 // Use Comparable and Comparator to impose natural ordering and usage of priority queue 
 
 public class Node implements Comparable<Node>{
@@ -16,26 +18,14 @@ public class Node implements Comparable<Node>{
 	// The cost of reaching the node
 	private double cost;
 
-
-
-
-
+	
 	public Node(State state, Node pred, double cost) {
 		
 		this.setState(state); 
 		this.setPredecssesor(pred); 
 		this.setCost(cost);
-		
 	}
 	
-
-	
-	public int getH_cost() {
-		
-		
-		return 0; 
-	}
-
 	
 	public State getState() {
 		return state;
@@ -71,15 +61,12 @@ public class Node implements Comparable<Node>{
 	public boolean equals(Object o) {
 		//System.out.println("I was here"); 
 		
-		
-		
-			if(this.state.equals(((Node)o).state)){
-				
-					return true;
-					
+		if(this.state.equals(((Node)o).state)){
+			if (this.cost >= ((Node)o).cost) {
+				return true;
 			}
-		
-		
+					
+		}
 		
 		return false;
 		
@@ -99,13 +86,20 @@ public class Node implements Comparable<Node>{
 	@Override
 	public int compareTo(Node e) {
 
-		
-		
-		
-		return 0; 
+		if (this.cost + heuristic(this) < e.cost + heuristic(e)) {
+			return 1;
+		}
+		else if (this.cost + heuristic(this) > e.cost + heuristic(e)) {
+			return -1;
+		}
+		else {
+			return 0;
+		}
 	}
 
-	
-	
 
+	public double heuristic(Node n) {
+		//return this.getState().getCurrent().distanceTo(n.getState().getCurrent());
+		return TaskSet.intersectComplement(State.acceptedTask, n.getState().getDeliveredTask()).size() * (n.cost / n.getState().getDeliveredTask().size());
+	}
 }
