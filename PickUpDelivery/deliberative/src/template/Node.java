@@ -81,7 +81,7 @@ public class Node implements Comparable<Node>{
 	
 	@Override 
 	public String toString() {
-		return (this.state.getCurrent().toString() +  " " + this.state.getPickedUpTask().toString() + " " + this.state.getDeliveredTask().toString()); 
+		return (this.state.getCurCity().toString() +  " " + this.state.getPickedUpTasks().toString() + " " + this.state.getDeliveredTasks().toString()); 
 	}
 
 	
@@ -103,7 +103,7 @@ public class Node implements Comparable<Node>{
 
 
 	public double heuristic(Node n) {
-		TaskSet remaining_tasks = TaskSet.intersectComplement(State.acceptedTask, this.getState().getDeliveredTask());
+		TaskSet remaining_tasks = TaskSet.intersectComplement(State.acceptedTask, this.getState().getDeliveredTasks());
 		
 		double min_cost = Double.POSITIVE_INFINITY;
 		
@@ -114,8 +114,8 @@ public class Node implements Comparable<Node>{
 		}
 		
 		return min_cost;
-		//return this.getState().getCurrent().distanceTo(n.getState().getCurrent());
-		//return TaskSet.intersectComplement(State.acceptedTask, n.getState().getDeliveredTask()).size() * (n.cost / n.getState().getDeliveredTask().size());
+		//return this.getState().getCurCity().distanceTo(n.getState().getCurCity());
+		//return TaskSet.intersectComplement(State.acceptedTask, n.getState().getDeliveredTasks()).size() * (n.cost / n.getState().getDeliveredTasks().size());
 		//return 0;
 	}
 }

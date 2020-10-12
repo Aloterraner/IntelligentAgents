@@ -6,9 +6,9 @@ import logist.task.TaskSet;
 
 public class State {
 	
-	private City current;
-	private TaskSet pickedUpTask;
-	private TaskSet deliveredTask;
+	private City curCity;
+	private TaskSet pickedUpTasks;
+	private TaskSet deliveredTasks;
 	public static TaskSet acceptedTask; 
 	
 	
@@ -16,39 +16,39 @@ public class State {
 	// the aviable Task (Not yet delivered, Not yet PickedUp)
 	// the pickedUp Task  
 	// the delivered Task
-	public State(City current, TaskSet pickedUpTask, TaskSet deliveredTask) {
-		this.current = current;
-		this.pickedUpTask = pickedUpTask;
-		this.deliveredTask = deliveredTask; 
+	public State(City curCity, TaskSet pickedUpTasks, TaskSet deliveredTasks) {
+		this.curCity = curCity;
+		this.pickedUpTasks = pickedUpTasks;
+		this.deliveredTasks = deliveredTasks; 
 	}
 	
-	// Returns true if the state is an endstate, a state with no aviableTask and no pickedUpTask, i.e all Task have been successfully delivered
+	// Returns true if the state is an endstate, a state with no aviableTask and no pickedUpTasks, i.e all Task have been successfully delivered
 	public boolean isGoalState() {
-		return (this.deliveredTask.equals(State.acceptedTask) && this.pickedUpTask.isEmpty()); 	
+		return (this.deliveredTasks.equals(State.acceptedTask) && this.pickedUpTasks.isEmpty()); 	
 	} 
 	
-	public City getCurrent() {
-		return current;
+	public City getCurCity() {
+		return curCity;
 	}
 
-	public void setCurrent(City current) {
-		this.current = current;
+	public void setCurCity(City curCity) {
+		this.curCity = curCity;
 	}
 
-	public TaskSet getPickedUpTask() {
-		return pickedUpTask;
+	public TaskSet getPickedUpTasks() {
+		return pickedUpTasks;
 	}
 
-	public void setPickedUpTask(TaskSet pickedUpTask) {
-		this.pickedUpTask = pickedUpTask;
+	public void setPickedUpTasks(TaskSet pickedUpTasks) {
+		this.pickedUpTasks = pickedUpTasks;
 	}
 
-	public TaskSet getDeliveredTask() {
-		return deliveredTask;
+	public TaskSet getDeliveredTasks() {
+		return deliveredTasks;
 	}
 
-	public void setDeliveredTask(TaskSet deliveredTask) {
-		this.deliveredTask = deliveredTask;
+	public void setDeliveredTasks(TaskSet deliveredTasks) {
+		this.deliveredTasks = deliveredTasks;
 	}
 
 	public static TaskSet getAcceptedTask() {
@@ -62,11 +62,11 @@ public class State {
 	@Override
 	public boolean equals (Object o) {
 		
-		if(this.current.equals(((State)o).current)) {
+		if(this.curCity.equals(((State)o).curCity)) {
 			
-			if(this.deliveredTask.equals(((State)o).deliveredTask)){
+			if(this.deliveredTasks.equals(((State)o).deliveredTasks)){
 				
-				if(this.pickedUpTask.equals(((State)o).pickedUpTask)){
+				if(this.pickedUpTasks.equals(((State)o).pickedUpTasks)){
 					
 					return true;
 				}
