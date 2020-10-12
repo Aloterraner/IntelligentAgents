@@ -114,7 +114,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 	
 	private Plan BFS_Plan(Vehicle vehicle, TaskSet tasks) {
 		
-		State.acceptedTask = tasks; 
+		State.acceptedTasks = tasks; 
 		
 		TaskSet deliveryTask = TaskSet.noneOf(tasks);
 		TaskSet pickedTask = TaskSet.noneOf(tasks); 
@@ -228,7 +228,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 	
 	private Plan aStar_Plan(Vehicle vehicle, TaskSet tasks) {
 
-		State.acceptedTask = tasks; 
+		State.acceptedTasks = tasks; 
 		
 		TaskSet deliveryTask = TaskSet.noneOf(tasks);
 		
@@ -334,13 +334,13 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		
 		ArrayList<Node> S = new ArrayList<Node>(); 
 		State curr_state = n.getState(); 
-		TaskSet tasks = State.acceptedTask; 
+		TaskSet tasks = State.acceptedTasks; 
 		double cost; 
 		State succ_state; 
 		
 		
-		TaskSet deliverable_tasks = TaskSet.noneOf(State.getAcceptedTask()); 
-		TaskSet pickable_tasks = TaskSet.noneOf(State.getAcceptedTask());
+		TaskSet deliverable_tasks = TaskSet.noneOf(State.getAcceptedTasks()); 
+		TaskSet pickable_tasks = TaskSet.noneOf(State.getAcceptedTasks());
 		TaskSet availableTasks = TaskSet.intersectComplement(tasks, TaskSet.union(curr_state.getDeliveredTasks(), curr_state.getPickedUpTasks())); 
 		
 		//System.out.println("Available Tasks: " + availableTasks.toString()); 

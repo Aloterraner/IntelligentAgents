@@ -9,7 +9,7 @@ public class State {
 	private City curCity;
 	private TaskSet pickedUpTasks;
 	private TaskSet deliveredTasks;
-	public static TaskSet acceptedTask; 
+	public static TaskSet acceptedTasks; 
 	
 	
 	// Define a State based on the current Vehicle Position,
@@ -24,7 +24,7 @@ public class State {
 	
 	// Returns true if the state is an endstate, a state with no aviableTask and no pickedUpTasks, i.e all Task have been successfully delivered
 	public boolean isGoalState() {
-		return (this.deliveredTasks.equals(State.acceptedTask) && this.pickedUpTasks.isEmpty()); 	
+		return (this.deliveredTasks.equals(State.acceptedTasks) && this.pickedUpTasks.isEmpty()); 	
 	} 
 	
 	public City getCurCity() {
@@ -51,12 +51,12 @@ public class State {
 		this.deliveredTasks = deliveredTasks;
 	}
 
-	public static TaskSet getAcceptedTask() {
-		return acceptedTask;
+	public static TaskSet getAcceptedTasks() {
+		return acceptedTasks;
 	}
 
-	public static void setAcceptedTask(TaskSet acceptedTask) {
-		State.acceptedTask = acceptedTask;
+	public static void setAcceptedTasks(TaskSet acceptedTasks) {
+		State.acceptedTasks = acceptedTasks;
 	}
 	
 	@Override
