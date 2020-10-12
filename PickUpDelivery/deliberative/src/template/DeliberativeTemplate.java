@@ -135,14 +135,14 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		test.add(finalNode); 
 		test.add(checkNode);
 		
-		System.out.println(" The initnode is already in the Set:  " +test.contains(initNode)); 
+		/*System.out.println(" The initnode is already in the Set:  " +test.contains(initNode)); 
 		System.out.println(" The checknode is already in the Set: " +test.contains(checkNode)); 
 		
 		
 		System.out.println("Test if GoalState works: " + finalNode.getState().isGoalState()); 
 		System.out.println("Check if both nodes are equal: " + initNode.equals(checkNode)); 
 		for(Node node : successor(initNode, vehicle)) System.out.println(node.toString());
-		
+		*/
 		
 		System.out.println("Starting Search ...");
 		HashSet<Node> GoalNodes = BFS_Search(initNode, vehicle); 
@@ -181,17 +181,14 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		Node n; 
 		Q.add(initNode);
 		
-		
 		do {
 			// n = first(Q), Q <- Rest(Q)
 			n = Q.pop();
-			if(count < 5000) {
+			/*if(count < 5000) {
 				System.out.println(n.toString()); 
-			}
+			}*/
 			
 			// n's state is a Goal State, add it to the goal states
-			
-			System.out.println(C.contains(n));
 			
 			if (n.getState().isGoalState()) {
 				GoalNodes.add(n); 
@@ -213,12 +210,12 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		
 			}
 			
-			if(count % 5000  == 0) {
+			if(count % 5000 == 0) {
 				System.out.println("Iteration: " + count); 
 			}
 			
 			count++; 
-		}while(!Q.isEmpty());
+		} while(!Q.isEmpty());
 		
 		
 		
@@ -249,13 +246,13 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		test.add(finalNode); 
 		test.add(checkNode);
 		
-		System.out.println(" The initnode is already in the Set:  " +test.contains(initNode)); 
+		/*System.out.println(" The initnode is already in the Set:  " +test.contains(initNode)); 
 		System.out.println(" The checknode is already in the Set: " +test.contains(checkNode)); 
 		
 		
 		System.out.println("Test if GoalState works: " + finalNode.getState().isGoalState()); 
 		System.out.println("Check if both nodes are equal: " + initNode.equals(checkNode)); 
-		for(Node node : successor(initNode, vehicle)) System.out.println(node.toString());
+		for(Node node : successor(initNode, vehicle)) System.out.println(node.toString());*/
 		
 		
 		System.out.println("Starting Search ...");
@@ -280,15 +277,22 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		Node n; 
 		Q.add(initNode);
 		
-		
 		do {
 			//n = first(Q), Q <- Rest(Q)
+			/*PriorityQueue<Node> Q_test =  new PriorityQueue<Node>(Q);
+
+			while(!Q_test.isEmpty()) {
+				Node test = Q_test.poll();
+				System.out.println(test.toString() + " " + test.getCost());
+			}
+			System.out.println("_____");*/
+			
 			n = Q.poll();
 
 			
-			if(count < 500 ) {
+			/*if(count < 500 ) {
 				System.out.println(n.toString()); 
-			}
+			}*/
 			
 			// n's state is a Goal State, add it to the goal states
 			
@@ -445,8 +449,6 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 			if (cur_node.getState().getCurrent() != next_node.getState().getCurrent()) {
 				plan.appendMove(next_node.getState().getCurrent());
 			}
-			
-			System.out.println(plan);
 			
 		}
 		return plan;

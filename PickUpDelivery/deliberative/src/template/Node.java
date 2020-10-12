@@ -103,19 +103,19 @@ public class Node implements Comparable<Node>{
 
 
 	public double heuristic(Node n) {
-		/*TaskSet remaining_tasks = TaskSet.intersectComplement(State.acceptedTask, this.getState().getDeliveredTask());
+		TaskSet remaining_tasks = TaskSet.intersectComplement(State.acceptedTask, this.getState().getDeliveredTask());
 		
 		double min_cost = Double.POSITIVE_INFINITY;
 		
 		for (Task task : remaining_tasks) {
 			if (task.pickupCity.distanceTo(task.deliveryCity) * 5 < min_cost) {
-				min_cost = task.pickupCity.distanceTo(task.deliveryCity) * 5;
+				min_cost = task.pickupCity.distanceTo(task.deliveryCity) * 5; // TODO: costs per km are hard-coded here
 			}
 		}
 		
-		return min_cost;*/
+		return min_cost;
 		//return this.getState().getCurrent().distanceTo(n.getState().getCurrent());
 		//return TaskSet.intersectComplement(State.acceptedTask, n.getState().getDeliveredTask()).size() * (n.cost / n.getState().getDeliveredTask().size());
-		return 0;
+		//return 0;
 	}
 }
