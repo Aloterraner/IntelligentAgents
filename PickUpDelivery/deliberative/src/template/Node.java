@@ -2,6 +2,8 @@ package template;
 import java.lang.Comparable;
 
 import logist.task.TaskSet;
+import logist.task.Task;
+
 
 // Use Comparable and Comparator to impose natural ordering and usage of priority queue 
 
@@ -79,17 +81,19 @@ public class Node implements Comparable<Node>{
 	
 	@Override 
 	public String toString() {
-		return (this.state.getCurrent().toString() +  " " + this.state.getPickedUpTask().toString() + " " + this.state.getDeliveredTask().toString()); 
+		return (this.state.getCurCity().toString() +  " " + this.state.getPickedUpTasks().toString() + " " + this.state.getDeliveredTasks().toString()); 
 	}
 
 	
 	@Override
 	public int compareTo(Node e) {
+		
+		// return (int)((this.cost + heuristic(this)) - (e.cost + heuristic(e)));
 
-		if (this.cost + heuristic(this) < e.cost + heuristic(e)) {
+		if (this.cost + heuristic(this) > e.cost + heuristic(e)) {
 			return 1;
 		}
-		else if (this.cost + heuristic(this) > e.cost + heuristic(e)) {
+		else if (this.cost + heuristic(this) < e.cost + heuristic(e)) {
 			return -1;
 		}
 		else {
@@ -99,7 +103,19 @@ public class Node implements Comparable<Node>{
 
 
 	public double heuristic(Node n) {
-		//return this.getState().getCurrent().distanceTo(n.getState().getCurrent());
-		return TaskSet.intersectComplement(State.acceptedTask, n.getState().getDeliveredTask()).size() * (n.cost / n.getState().getDeliveredTask().size());
+		TaskSet remaining_tasks = TaskSet.intersectComplement(State.acceptedTasks, this.getState().getDeliveredTasks());
+		
+		double min_cost = Double.POSITIVE_INFINITY;
+		
+		for (Task task : remaining_tasks) {
+			if (task.pickupCity.distanceTo(task.deliveryCity) * 5 < min_cost) {
+				min_cost = task.pickupCity.distanceTo(task.deliveryCity) * 5; // TODO: costs per km are hard-coded here
+			}
+		}
+		
+		return min_cost;
+		//return this.getState().getCurCity().distanceTo(n.getState().getCurCity());
+		//return TaskSet.intersectComplement(State.acceptedTasks, n.getState().getDeliveredTasks()).size() * (n.cost / n.getState().getDeliveredTasks().size());
+		//return 0;
 	}
 }
