@@ -120,15 +120,9 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 	private Plan BFS_Plan(Vehicle vehicle, TaskSet tasks) {
 		
 		
-		State.acceptedTasks = agent.getTasks();
-		
+		State.acceptedTasks = TaskSet.union(tasks,vehicle.getCurrentTasks());
 		TaskSet deliveryTask = TaskSet.noneOf(tasks); 
 		TaskSet pickedTask =  vehicle.getCurrentTasks();
-		
-		System.out.println("Tasks: " + tasks);
-		System.out.println("Delivery Tasks: " + deliveryTask);
-		System.out.println("Picked Tasks: " + pickedTask);
-		
 		
 		State initState = new State(vehicle.getCurrentCity(), pickedTask, deliveryTask);
 
@@ -238,12 +232,9 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 	
 	private Plan aStar_Plan(Vehicle vehicle, TaskSet tasks) {
 
-		State.acceptedTasks = tasks; 
-		
-		TaskSet deliveryTask = TaskSet.noneOf(tasks);
-		
-		
-		TaskSet pickedTask = TaskSet.noneOf(tasks); 
+		State.acceptedTasks = TaskSet.union(tasks,vehicle.getCurrentTasks());
+		TaskSet deliveryTask = TaskSet.noneOf(tasks); 
+		TaskSet pickedTask =  vehicle.getCurrentTasks();
 		
 		State initState = new State(vehicle.getCurrentCity(), pickedTask, deliveryTask);
 		
