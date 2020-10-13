@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import java.util.Stack;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 
 import logist.agent.Agent;
 import logist.behavior.DeliberativeBehavior;
@@ -39,7 +40,6 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 	Agent agent;
 	int capacity;
 
-
 	/* the planning class */
 	Algorithm algorithm;
 	
@@ -63,6 +63,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		Plan plan;
 		
 		// Compute the plan with the selected algorithm.
+		long start_time;
 		switch (algorithm) {
 		case ASTAR:
 			System.out.println("Using AStar Search");
@@ -128,39 +129,20 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 
 		Node initNode = new Node(initState, null, 0.0);
 	
-		
-		/*System.out.println("Checking Equality");
-		initState = new State(vehicle.getCurCityCity(), TaskSet.noneOf(tasks), TaskSet.noneOf(tasks));
-		
-		Node checkNode = new Node(initState, null, 0.0); 
-		
-		
-		Node finalNode = new Node(new State(vehicle.getCurCityCity(), deliveryTask, tasks), null ,0.0); 
-		
-		
-		HashSet<Node> test = new HashSet<Node>(); 
-		test.add(finalNode); 
-		test.add(checkNode);*/
-		
-		/*System.out.println(" The initnode is already in the Set:  " +test.contains(initNode)); 
-		System.out.println(" The checknode is already in the Set: " +test.contains(checkNode)); 
-		
-		
-		System.out.println("Test if GoalState works: " + finalNode.getState().isGoalState()); 
-		System.out.println("Check if both nodes are equal: " + initNode.equals(checkNode)); 
-		for(Node node : successor(initNode, vehicle)) System.out.println(node.toString());
-		*/
-		
 		System.out.println("Starting Search ...");
-		HashSet<Node> GoalNodes = BFS_Search(initNode, vehicle); 
-		System.out.println("Finished Search");
-		// Find the optimal Node
 		
+		long start_time = System.nanoTime();
+		
+		HashSet<Node> GoalNodes = BFS_Search(initNode, vehicle); 
+		
+		long end_time = System.nanoTime();
+		long time_elapsed = end_time - start_time;
+		
+		System.out.println("Finished search. Execution time in miliseconds: " + (time_elapsed / 1000000));
 		System.out.println("Goal Nodes: " + GoalNodes.toString() );
 		// Select the GoalNode with the lowest overall Costs
 		double min = Double.MAX_VALUE; 
 		Node optimal_node = null; 
-		
 		
 		for(Node node : GoalNodes) {
 			
@@ -189,22 +171,15 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		Q.add(initNode);
 		
 		do {
-			// n = first(Q), Q <- Rest(Q)
 			n = Q.pop();
-			/*if(count < 5000) {
-				System.out.println(n.toString()); 
-			}*/
-			
+		
 			// n's state is a Goal State, add it to the goal states
-			
 			if (n.getState().isGoalState()) {
 				GoalNodes.add(n); 
-				System.out.println("Found a Goal State"); 
-				
 				
 			// Check for Cycle, if not proceed with successor, prevent fall through from Goalstates as this would lead to
 		    // non-termination if succ of Goal state would be considered, as all possible succ() would be equally Goal States
-			}else if(!C.contains(n)){
+			} else if(!C.contains(n)){
 			
 				C.add(n); 
 				
@@ -214,17 +189,10 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 				// Append(Q,S) as in Lecture Slide 18/56
 				Q.addAll(S);		
 				
-		
-			}
-			
-			if(count % 5000 == 0) {
-				System.out.println("Iteration: " + count); 
 			}
 			
 			count++; 
 		} while(!Q.isEmpty());
-		
-		
 		
 		return GoalNodes; 
 		
@@ -240,32 +208,19 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		
 		System.out.println("Checking Equality"); 
 		Node initNode = new Node(initState, null, 0.0);
-		initState = new State(vehicle.getCurrentCity(), TaskSet.noneOf(tasks), TaskSet.noneOf(tasks));
-		
-		Node checkNode = new Node(initState, null, 0.0); 
-		Node finalNode = new Node(new State(vehicle.getCurrentCity(), deliveryTask, tasks), null ,0.0); 
-		
-		
-		HashSet<Node> test = new HashSet<Node>(); 
-		test.add(finalNode); 
-		test.add(checkNode);
-		
-		/*System.out.println(" The initnode is already in the Set:  " +test.contains(initNode)); 
-		System.out.println(" The checknode is already in the Set: " +test.contains(checkNode)); 
-		
-		
-		System.out.println("Test if GoalState works: " + finalNode.getState().isGoalState()); 
-		System.out.println("Check if both nodes are equal: " + initNode.equals(checkNode)); 
-		for(Node node : successor(initNode, vehicle)) System.out.println(node.toString());*/
-		
 		
 		System.out.println("Starting Search ...");
-		Node optimal_node = ASTAR_Search(initNode, vehicle); 
-		System.out.println("Finished Search");
+		
+		long start_time = System.nanoTime();
+		
+		Node optimal_node = ASTAR_Search(initNode, vehicle);
+		
+		long end_time = System.nanoTime();
+		long time_elapsed = end_time - start_time;
+		
+		System.out.println("Finished search. Execution time in miliseconds: " + (time_elapsed / 1000000));
 		// Find the optimal Node
-		
 		System.out.println("Found Optimal Node with cost: " + optimal_node.getCost());
-		
 		System.out.println("Compute plan from optimal node"); 
 		
 		Plan plan = parse_Plan(optimal_node);
@@ -282,46 +237,22 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		Q.add(initNode);
 
 		do {
-			//n = first(Q), Q <- Rest(Q)
-			/*PriorityQueue<Node> Q_test =  new PriorityQueue<Node>(Q);
-
-			while(!Q_test.isEmpty()) {
-				Node test = Q_test.poll();
-				System.out.println(test.toString() + " " + test.getCost());
-			}
-			System.out.println("_____");*/
-			
 			n = Q.poll();
-
-			
-			/*if(count < 500 ) {
-				System.out.println(n.toString()); 
-			}*/
-			
 			// n's state is a Goal State, add it to the goal states
 			
 			if (n.getState().isGoalState()) {
-				
-
-				System.out.println("Found a Goal State"); 
 				return n;
 				
 			// Check for Cycle, if not proceed with successor, prevent fall through from Goalstates as this would lead to
 		    // non-termination if succ of Goal state would be considered, as all possible succ() would be equally Goal States
-			}else if(!C.contains(n)){
+			} else if(!C.contains(n)){
 			
 				C.add(n); 
-				
 				// succ(n)
 				ArrayList<Node> S = successor(n, vehicle);
-				
 				// Append(Q,S) as in Lecture Slide 18/56
 				Q.addAll(S);		
 				
-			}
-			
-			if(count % 5000  == 0) {
-				System.out.println("Iteration: " + count); 
 			}
 			
 			count++; 
@@ -339,12 +270,9 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		double cost; 
 		State succ_state; 
 		
-		
 		TaskSet deliverable_tasks = TaskSet.noneOf(State.getAcceptedTasks()); 
 		TaskSet pickable_tasks = TaskSet.noneOf(State.getAcceptedTasks());
 		TaskSet availableTasks = TaskSet.intersectComplement(tasks, TaskSet.union(curr_state.getDeliveredTasks(), curr_state.getPickedUpTasks())); 
-		
-		//System.out.println("Available Tasks: " + availableTasks.toString()); 
 		
 		// Check, which not yet PickedUp Task might be picked up in this city (AviableTasks intersected with all not yet delievered Tasks)
 		
@@ -355,18 +283,13 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 				pickable_tasks.add(task);
 			}
 		}
-		
-		
-		//System.out.println("Pickable Tasks: " + pickable_tasks.toString()); 
-		
-		
+
 		// Check, which not yet Delivered Task might be delivered in this city 
 		for(Task task : curr_state.getPickedUpTasks()){
 			if(task.deliveryCity == curr_state.getCurCity()){
 				deliverable_tasks.add(task);
 			}
 		}
-		
 		
 		TaskSet curCity_load = TaskSet.intersectComplement(curr_state.getPickedUpTasks(), deliverable_tasks);
 		
@@ -377,7 +300,6 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 			
 			
 			// Create a new TaskSet for PickedUp Actions plus the PickedUp task
-
 			TaskSet new_pickedup = curCity_load.clone(); 
 			new_pickedup.add(task); 
 			
@@ -406,11 +328,6 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		return S;
 		
 	}
-	
-
-
-	
-	
 	
 	private Plan parse_Plan(Node optimal_node) {
 		System.out.println("Compute plan from optimal node"); 
