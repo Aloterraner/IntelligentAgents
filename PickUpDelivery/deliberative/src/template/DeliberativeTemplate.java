@@ -1,8 +1,6 @@
 package template;
 
 /* import table */
-import template.AstarPlan;
-import template.BFSPlan;
 import logist.simulation.Vehicle;
 
 import java.util.ArrayList;

@@ -61,8 +61,6 @@ public class Node implements Comparable<Node>{
 	
 	@Override 
 	public boolean equals(Object o) {
-		//System.out.println("I was here"); 
-		
 		if(this.state.equals(((Node)o).state)){
 			if (this.cost >= ((Node)o).cost) {
 				return true;
@@ -72,12 +70,13 @@ public class Node implements Comparable<Node>{
 		
 		return false;
 		
-		
 	}
+	
 	@Override
 	public int hashCode(){
 		return this.toString().hashCode();
 	}
+	
 	
 	@Override 
 	public String toString() {
@@ -114,8 +113,5 @@ public class Node implements Comparable<Node>{
 		}
 		
 		return min_cost;
-		//return this.getState().getCurCity().distanceTo(n.getState().getCurCity());
-		//return TaskSet.intersectComplement(State.acceptedTasks, n.getState().getDeliveredTasks()).size() * (n.cost / n.getState().getDeliveredTasks().size());
-		//return 0;
 	}
 }
