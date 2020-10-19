@@ -138,7 +138,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		long end_time = System.nanoTime();
 		long time_elapsed = end_time - start_time;
 		
-		System.out.println("Finished search. Execution time in miliseconds: " + (time_elapsed / 1000000));
+		System.out.println("Finished search. Execution time in seconds: " + (time_elapsed / 1000000000));
 		System.out.println("Goal Nodes: " + GoalNodes.toString() );
 		// Select the GoalNode with the lowest overall Costs
 		double min = Double.MAX_VALUE; 
@@ -218,7 +218,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		long end_time = System.nanoTime();
 		long time_elapsed = end_time - start_time;
 		
-		System.out.println("Finished search. Execution time in miliseconds: " + (time_elapsed / 1000000));
+		System.out.println("Finished search. Execution time in seconds: " + (time_elapsed / 1000000000));
 		// Find the optimal Node
 		System.out.println("Found Optimal Node with cost: " + optimal_node.getCost());
 		System.out.println("Compute plan from optimal node"); 
