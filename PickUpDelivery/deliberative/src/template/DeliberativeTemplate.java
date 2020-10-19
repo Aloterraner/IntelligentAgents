@@ -39,6 +39,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 	/* the properties of the agent */
 	Agent agent;
 	int capacity;
+	static int counter = 0; 
 
 	/* the planning class */
 	Algorithm algorithm;
@@ -48,6 +49,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		this.topology = topology;
 		this.td = td;
 		this.agent = agent;
+		
 		
 		// initialize the planner
 		int capacity = agent.vehicles().get(0).capacity();
@@ -61,7 +63,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 	@Override
 	public Plan plan(Vehicle vehicle, TaskSet tasks) {
 		Plan plan;
-		
+		counter++; 
 		// Compute the plan with the selected algorithm.
 		long start_time;
 		switch (algorithm) {
@@ -80,6 +82,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		default:
 			throw new AssertionError("Should not happen.");
 		}		
+		System.out.println("Called plan(): " + counter);
 		return plan;
 	}
 	
