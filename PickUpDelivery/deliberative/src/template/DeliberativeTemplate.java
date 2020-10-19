@@ -38,6 +38,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 	/* the properties of the agent */
 	Agent agent;
 	int capacity;
+	static int counter = 0; 
 
 
 	/* the planning class */
@@ -48,6 +49,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		this.topology = topology;
 		this.td = td;
 		this.agent = agent;
+		
 		
 		// initialize the planner
 		int capacity = agent.vehicles().get(0).capacity();
@@ -61,7 +63,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 	@Override
 	public Plan plan(Vehicle vehicle, TaskSet tasks) {
 		Plan plan;
-		
+		counter++; 
 		// Compute the plan with the selected algorithm.
 		switch (algorithm) {
 		case ASTAR:
@@ -79,6 +81,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		default:
 			throw new AssertionError("Should not happen.");
 		}		
+		System.out.println("Called plan(): " + counter);
 		return plan;
 	}
 	
@@ -127,29 +130,6 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		State initState = new State(vehicle.getCurrentCity(), pickedTask, deliveryTask);
 
 		Node initNode = new Node(initState, null, 0.0);
-	
-		
-		/*System.out.println("Checking Equality");
-		initState = new State(vehicle.getCurCityCity(), TaskSet.noneOf(tasks), TaskSet.noneOf(tasks));
-		
-		Node checkNode = new Node(initState, null, 0.0); 
-		
-		
-		Node finalNode = new Node(new State(vehicle.getCurCityCity(), deliveryTask, tasks), null ,0.0); 
-		
-		
-		HashSet<Node> test = new HashSet<Node>(); 
-		test.add(finalNode); 
-		test.add(checkNode);*/
-		
-		/*System.out.println(" The initnode is already in the Set:  " +test.contains(initNode)); 
-		System.out.println(" The checknode is already in the Set: " +test.contains(checkNode)); 
-		
-		
-		System.out.println("Test if GoalState works: " + finalNode.getState().isGoalState()); 
-		System.out.println("Check if both nodes are equal: " + initNode.equals(checkNode)); 
-		for(Node node : successor(initNode, vehicle)) System.out.println(node.toString());
-		*/
 		
 		System.out.println("Starting Search ...");
 		HashSet<Node> GoalNodes = BFS_Search(initNode, vehicle); 
@@ -282,14 +262,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		Q.add(initNode);
 
 		do {
-			//n = first(Q), Q <- Rest(Q)
-			/*PriorityQueue<Node> Q_test =  new PriorityQueue<Node>(Q);
 
-			while(!Q_test.isEmpty()) {
-				Node test = Q_test.poll();
-				System.out.println(test.toString() + " " + test.getCost());
-			}
-			System.out.println("_____");*/
 			
 			n = Q.poll();
 
