@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<topology name="england" >
+
+	<!-- the list of cities in the topology -->
+	<cities>
+		<city x="484" y="565" name="London"/>
+		<city x="323" y="420" name="Birmingham"/>
+		<city x="613" y="399" name="Norwich"/>
+	</cities>
+
+	<!-- the list of routes in the topology
+
+		@note: All distances are given in miles !!!
+	-->
+	<routes>
+		<route distance="115"  from="London" to="Norwich"/>
+		<route distance="118"  from="London" to="Birmingham"/>
+		<route distance="115"  from="Birmingham" to="Norwich"/>
+	</routes>
+
+</topology>
