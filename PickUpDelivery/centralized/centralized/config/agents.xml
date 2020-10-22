@@ -5,7 +5,7 @@
 	
 	<!-- #### CENTRALIZED AGENTS ### -->
 	<agent name="centralized-random">
-		<set class-path="bin/"/>
+		<set class-path="bin/"></set>
 		<set class-name="template.CentralizedTemplate"/>
 	</agent>
 	

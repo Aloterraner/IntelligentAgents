@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import logist.LogistSettings;
+import java.io.File; 
 
 import logist.Measures;
 import logist.behavior.AuctionBehavior;
@@ -100,4 +101,84 @@ public class CentralizedTemplate implements CentralizedBehavior {
         }
         return plan;
     }
+    
+    
+    
+    
+    // Base call to Compute the Plan
+    private SLS_algorithm() {
+    	
+    	
+    	
+    	
+    }
+    
+    
+    // Compute an inital plan based on distributing each Task to the nearest vehicle that has some Capacity left. 
+    private SelectInitialSolution() {
+    	
+    	
+    	
+    	
+    	
+    	
+    }
+    
+    // Parse the Plan to the 
+    private List<Plan> parsePlan{
+    	
+    	
+    	
+    	
+    	
+    	
+    }
+    
+
+    
+    // ChooseNeighbours(Aold,X,D,C,f)
+    private ChooseNeighbours( ) {
+    	
+    	
+    }
+    
+    // Calculate the Cost Function
+    private double CalculateCost() {
+    	
+    	
+    	
+    	
+    	
+    }
+    
+    
+    
+    
+    
+    
+    // Look at different Local Variation of the Current Plan
+    // Switch Task Schedule or Vehicle Assignment
+    
+    // ChangingVehicle(A, v1, v2) 
+    private ChangingVehicle() {
+    	
+    }
+    
+    // ChangingTaskOrder(A, vi, tIdx1, tIdx2)
+    private ChangingTaskOrder() {
+    	
+    }
+    
+    // UpdateTime(A, vi)
+    private UpdateTime() {
+    	
+    	
+    }
+    
+    // Select the optimal plan in accordance with the lowest cost, add a probability p to the choice to escape local optima
+    private LocalChoice() {
+    	
+    	
+    }
+    
 }
