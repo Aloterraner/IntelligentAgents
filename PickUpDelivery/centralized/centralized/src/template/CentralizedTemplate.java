@@ -2,6 +2,8 @@ package template;
 
 //the list of imports
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import logist.LogistSettings;
@@ -106,49 +108,86 @@ public class CentralizedTemplate implements CentralizedBehavior {
     
     
     // Base call to Compute the Plan
-    private SLS_algorithm() {
+    private HashMap<Vehicle,List<Action>> SLS_algorithm() {
     	
     	
     	
-    	
+    	return null; 
     }
+    
+    
+    
+    /* HashMap Mapping Vehicle to Actions for the Vehicle
+     * 
+     * v_1 -> List of Actions for Vehicle 1  
+     *  .
+     *  . 
+     *  .
+     *  .
+     *  . 
+     * v_k -> List of Actions for Vehicle k
+     * 
+     */
+    
     
     
     // Compute an inital plan based on distributing each Task to the nearest vehicle that has some Capacity left. 
-    private SelectInitialSolution() {
+    private HashMap<Vehicle,List<Action>> SelectInitialSolution(TaskSet tasks, Topology topology, Agent agent){
+    	
+    	// Generate a basic array in the length of the number of vehicles
+    	HashMap<Vehicle, List<Action>> plan = new HashMap<Vehicle,List<Action>>(); 
+    
+    	
+    	
+    	for(Vehicle vehicle : agent.vehicles()) {
+    		
+    		
+    		
+    		
+    		
+    		
+    		
+    	}
     	
     	
     	
     	
     	
     	
+    	
+    	
+    	
+    	return plan; 
     }
     
     // Parse the Plan to the 
-    private List<Plan> parsePlan{
+    private List<Plan> parsePlan(HashMap<Vehicle,List<Action>> result){
     	
     	
     	
     	
     	
-    	
+    	return null; 
     }
     
 
     
     // ChooseNeighbours(Aold,X,D,C,f)
-    private ChooseNeighbours( ) {
+    private ChooseNeighbours(HashMap<Vehicle,List<Action>> plan, ) {
     	
+    	
+    	
+    	return
     	
     }
     
     // Calculate the Cost Function
-    private double CalculateCost() {
+    private double CalculateCost(HashMap<Vehicle,List<Action>> plan) {
+    	double cost = 0.0; 
     	
     	
     	
-    	
-    	
+    	return cost; 
     }
     
     
@@ -160,23 +199,41 @@ public class CentralizedTemplate implements CentralizedBehavior {
     // Switch Task Schedule or Vehicle Assignment
     
     // ChangingVehicle(A, v1, v2) 
-    private ChangingVehicle() {
+    private HashMap<Vehicle,List<Action>> ChangingVehicle(HashMap<Vehicle,List<Action>> plan) {
     	
+    	
+    	
+    	return null; 
     }
     
-    // ChangingTaskOrder(A, vi, tIdx1, tIdx2)
-    private ChangingTaskOrder() {
+    // ChangingTaskOrder(A, vi, tIdx1, tIdx2) replace with a function changing the order of a PickUp or Delivery Action 
+    private HashMap<Vehicle,List<Action>> ChangingTaskOrder(HashMap<Vehicle,List<Action>> plan) {
     	
+    	
+    	return null; 
     }
     
     // UpdateTime(A, vi)
-    private UpdateTime() {
+    private void UpdateTime() {
     	
     	
     }
     
     // Select the optimal plan in accordance with the lowest cost, add a probability p to the choice to escape local optima
-    private LocalChoice() {
+    private HashMap<Vehicle,List<Action>> LocalChoice(HashSet<List<Action>[]> set) {
+    	
+    	
+    	
+    }
+    
+    private void UpdateCost() {
+    	
+    	
+    }
+    
+    
+    // Debug Function to print out a plan in the console
+    private void print_plan() {
     	
     	
     }

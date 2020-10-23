@@ -6,23 +6,92 @@ import java.util.Random;
 import logist.LogistSettings;
 import java.io.File; 
 
-import logist.Measures;
-import logist.behavior.AuctionBehavior;
-import logist.behavior.CentralizedBehavior;
-import logist.agent.Agent;
-import logist.config.Parsers;
+
 import logist.simulation.Vehicle;
 import logist.plan.Plan;
 import logist.task.Task;
-import logist.task.TaskDistribution;
-import logist.task.TaskSet;
+
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
 
-public class Action {
+public abstract class Action {
+	
+	private Task task; 
+	private int time; 
+	private Vehicle vehicle; 
+	private double costs; 
 	
 	
+	
+	
+	public Action(Task task, int time, Vehicle vehicle, double costs){
+		this.setCosts(costs); 
+		this.setTask(task); 
+		this.setVehicle(vehicle);
+		this.setTime(time); 
+		
+		
+	}
+
+
+
+
+	public Task getTask() {
+		return task;
+	}
+
+
+
+
+	public void setTask(Task task) {
+		this.task = task;
+	}
+
+
+
+
+	public int getTime() {
+		return time;
+	}
+
+
+
+
+	public void setTime(int time) {
+		this.time = time;
+	}
+
+
+
+
+	public double getCosts() {
+		return costs;
+	}
+
+
+
+
+	public void setCosts(double costs) {
+		this.costs = costs;
+	}
+
+
+
+
+	public Vehicle getVehicle() {
+		return vehicle;
+	}
+
+
+
+
+	public void setVehicle(Vehicle vehicle) {
+		this.vehicle = vehicle;
+	}
+	
+	
+
 	
 	
 	
