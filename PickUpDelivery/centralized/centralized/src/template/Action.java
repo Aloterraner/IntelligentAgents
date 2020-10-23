@@ -17,10 +17,10 @@ import logist.topology.Topology.City;
 
 public abstract class Action {
 	
-	private Task task; 
-	private int time; 
-	private Vehicle vehicle; 
-	private double costs; 
+	protected Task task; 
+	protected int time; 
+	protected Vehicle vehicle; 
+	protected double costs; 
 	
 	
 	

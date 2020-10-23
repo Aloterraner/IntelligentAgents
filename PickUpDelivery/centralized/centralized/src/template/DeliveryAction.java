@@ -5,9 +5,22 @@ import logist.task.Task;
 
 public class DeliveryAction extends Action{
 
-	public DeliveryAction(Task task, int time, Vehicle vehicle, double costs) {
+	public PickUpAction pickUpAction; 
+	
+	public DeliveryAction(Task task, int time, Vehicle vehicle, double costs, PickUpAction pickupAction) {
 		super(task, time, vehicle, costs);
-		// TODO Auto-generated constructor stub
+		this.pickUpAction = pickupAction; 
+	}
+	
+	
+	
+	public String toString() {
+		
+		
+		
+		
+		
+		return ("Deliver Task: " + this.task.id + " at time " + this.time +  " by Vehicle " + this.vehicle.id() + " the associated pickupAction " + this.pickUpAction.toString());
 	}
 	
 	
