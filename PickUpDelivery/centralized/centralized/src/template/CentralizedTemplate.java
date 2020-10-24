@@ -348,11 +348,8 @@ public class CentralizedTemplate implements CentralizedBehavior {
     	
     	
     	
-    	
     	for(Vehicle vehicle : agent.vehicles()) {
     			
-    		
-    		
     		
     		// Check constraint (1), Event Times of following events are subsequent integers. 
     		
@@ -369,7 +366,7 @@ public class CentralizedTemplate implements CentralizedBehavior {
     		
     		
     	
-    		// Constraint (4) and (7), Vehicle remains always below its maximum capacity
+    		// Constraint (4) and (6), Vehicle remains always below its maximum capacity
     		int current_load = 0;
     		for(Action action : plan.get(vehicle.id())) {
     			
@@ -377,7 +374,8 @@ public class CentralizedTemplate implements CentralizedBehavior {
     			if(action instanceof PickUpAction){
     				current_load += action.task.weight; 
     				
-    				// Check if adding the package would lead to going over capacity
+    				
+    				// Violation of (4), Check if adding the package would lead to going over capacity
     				if(current_load > vehicle.capacity()) {
     					return false; 
     				}
@@ -389,7 +387,7 @@ public class CentralizedTemplate implements CentralizedBehavior {
     				current_load -= action.task.weight; 
     				
     				
-    				// Check if the package is already loaded at the time of delivery
+    				// Violation of (6) Check if the package is already loaded at the time of delivery
     				if(((DeliveryAction) action).pickUpAction.time > action.time)  {
     					
     					return false;
