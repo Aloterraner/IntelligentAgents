@@ -57,8 +57,10 @@ public class CentralizedTemplate implements CentralizedBehavior {
         this.topology = topology;
         this.distribution = distribution;
         this.agent = agent;
+   
     }
 
+    
     @Override
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
         long time_start = System.currentTimeMillis();
@@ -69,8 +71,6 @@ public class CentralizedTemplate implements CentralizedBehavior {
         List<Plan> result;  
         
         //System.out.println("Agent " + agent.id() + " has tasks " + tasks);
-
-        
         // Check if the Behaviour of the Reference to PickUpAction Object in the DeliveryAction Object works as expected
         Task task = (Task) tasks.toArray()[0]; 
  		PickUpAction pickup = new PickUpAction(task,0, vehicles.get(0), 0.0); 
@@ -83,8 +83,9 @@ public class CentralizedTemplate implements CentralizedBehavior {
 		System.out.println("Delivery Action: " + delievery.toString());
         
         
+        result = SLS_algorithm(tasks, topology, agent, timeout_plan); 
         
-        result = SLS_algorithm(tasks, topology, agent); 
+        
         for (Plan plan : result) {
         	System.out.println("\n Resulting plans: " + plan.toString()+ "\n"); 
         }
@@ -93,9 +94,7 @@ public class CentralizedTemplate implements CentralizedBehavior {
         	System.out.println("Start City of Vehicle " + veh.id() + " is " + veh.getCurrentCity()); 
         }
         
-        
-        
-        
+
         long time_end = System.currentTimeMillis();
         long duration = time_end - time_start;
         System.out.println("The plan was generated in " + duration + " milliseconds.");
@@ -103,6 +102,7 @@ public class CentralizedTemplate implements CentralizedBehavior {
         return result;
     }
 
+    
     private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
         City current = vehicle.getCurrentCity();
         Plan plan = new Plan(current);
@@ -128,11 +128,12 @@ public class CentralizedTemplate implements CentralizedBehavior {
         return plan;
     }
     
-    
-    
-    
+
     // Base call to Compute the Plan
-    private List<Plan> SLS_algorithm(TaskSet tasks, Topology topology, Agent agent) {
+    private List<Plan> SLS_algorithm(TaskSet tasks, Topology topology, Agent agent, double timeout) {
+    	
+    	long time_start = System.currentTimeMillis();
+    	long time_needed = 0;
     	
     	System.out.println("Computing Initial Solution ... ");
     	HashMap<Integer,ArrayList<Action>> plan = SelectInitialSolution( tasks, topology, agent); 
@@ -140,15 +141,34 @@ public class CentralizedTemplate implements CentralizedBehavior {
     	System.out.print("\n" + plan.toString() + "\n");
     	
     	System.out.println("Dev: Check if the Initial Plan is a fullfilling the constraints: " + verify_constraint(plan)); 
+
+    	int counter = 0;
+    	HashMap<Integer,ArrayList<Action>> plan_old;
+    	HashSet<HashMap<Integer,ArrayList<Action>>> neighbors;
+    	HashSet<HashMap<Integer,ArrayList<Action>>> plans = new HashSet<HashMap<Integer, ArrayList<Action>>>();
+    	plans.add(plan);
     	
+    	// iterate
+    	while(counter < 10000 || time_needed > timeout) {
+    		plan_old = plan;
+    		neighbors = ChooseNeighbours(plan_old);
+    		plan = LocalChoice(neighbors);
+    		if (verify_constraint(plan)) {
+    			plans.add(plan);
+    		}
+    		counter += 1;
+    		time_needed = System.currentTimeMillis() - time_start;
+    	}
     	
+    	// Get best plan from all plans
+    	// TODO
     	
     	System.out.println("Parsing Plan! "); 
+    
     	return parsePlan(plan); 
     }
     
-    
-    
+
     /* HashMap Mapping Vehicle to Actions for the Vehicle
      * 
      * v_1 -> List of Actions for Vehicle 1  
@@ -161,8 +181,6 @@ public class CentralizedTemplate implements CentralizedBehavior {
      * 
      */
     
-    
-    
     // Compute an inital plan based on distributing each Task to the nearest vehicle that has some Capacity left. 
     private HashMap<Integer,ArrayList<Action>> SelectInitialSolution(TaskSet tasks, Topology topology, Agent agent){
     	
@@ -174,7 +192,6 @@ public class CentralizedTemplate implements CentralizedBehavior {
     	
     	for(Vehicle vehicle : agent.vehicles()) {
     		plan.put(vehicle.id(), new ArrayList<Action>()); 
-    		
     	}
     	
     	// Check for each Tasks what the closest vehicle is 
@@ -207,21 +224,19 @@ public class CentralizedTemplate implements CentralizedBehavior {
     		plan.get(smallest).add(new DeliveryAction(task,current_time[smallest], veh, 0.0, pickup)); 
     		current_time[smallest]++; 
     		
-    		
     		current_load[smallest] += task.weight;
-    		
-    		
+	
     		
     	}
     				
     	return plan; 
     }
+   
     
     // Parse the Plan to the 
     private List<Plan> parsePlan(HashMap<Integer,ArrayList<Action>> intermediate_plans){
     	
     	List<Plan> result = new ArrayList<Plan>();
-    	
     	
     	for(Vehicle vehicle : agent.vehicles()) {
     		City current = vehicle.getCurrentCity();
@@ -243,73 +258,79 @@ public class CentralizedTemplate implements CentralizedBehavior {
     				
     			if(action instanceof DeliveryAction) {
     				for(City city :  current.pathTo(action.task.deliveryCity)) {
-    				
-    					
-    					
+
     					plan.appendMove(city);; 
     					
     				}
     				plan.appendDelivery(action.task);
     				current = action.task.deliveryCity; 
     			}
-    			
-    			
-    		
-    			
-    			
-    			
+
     		}
     		
 			result.add(plan); 
     	}
     	
-    	
-    	
     	return result; 
     }
     
 
-    
     // ChooseNeighbours(Aold,X,D,C,f)
-    private HashSet<HashMap<Vehicle,ArrayList<Action>>> ChooseNeighbours(HashMap<Vehicle,ArrayList<Action>> plan) {
+    private HashSet<HashMap<Integer,ArrayList<Action>>> ChooseNeighbours(HashMap<Integer,ArrayList<Action>> plan) {
     	
+    	HashSet<HashMap<Integer,ArrayList<Action>>> neighbors = new HashSet<HashMap<Integer,ArrayList<Action>>>();
+    	HashMap<Integer,ArrayList<Action>> new_plan;
+    	Random rand = new Random();
+    	int v_i = rand.nextInt(this.agent.vehicles().size());
+    	
+    	
+    	// Applying the changing vehicle order operator
+    	for (int v_j = 0; v_j < this.agent.vehicles().size(); v_j++) {
+    		if (v_j == v_i) {
+    			continue;
+    		}
+    		
+    		new_plan = ChangingVehicle(v_i, v_j, plan);
+    		neighbors.add(new_plan);
+    		
+    	}
+    	
+    	// Applying the changing task operator
+    	
+    	
+    	
+ 
     	
     	
     	return null; 
     	
     }
+
     
     // Calculate the Cost Function
-    private double CalculateCost(HashMap<Vehicle,ArrayList<Action>> plan) {
+    private double CalculateCost(HashMap<Integer,ArrayList<Action>> plan) {
     	double cost = 0.0; 
-    	
-    	
-    	
+
     	return cost; 
     }
-    
-    
-    
-    
-    
+
     
     // Look at different Local Variation of the Current Plan
     // Switch Task Schedule or Vehicle Assignment
     
     // ChangingVehicle(A, v1, v2) 
-    private HashMap<Vehicle,ArrayList<Action>> ChangingVehicle(HashMap<Vehicle,ArrayList<Action>> plan) {
-    	
-    	
+    private HashMap<Integer,ArrayList<Action>> ChangingVehicle(Integer v1, Integer v2, HashMap<Integer,ArrayList<Action>> plan) {
     	
     	return null; 
     }
     
+    
     // ChangingTaskOrder(A, vi, tIdx1, tIdx2) replace with a function changing the order of a PickUp or Delivery Action 
-    private HashMap<Vehicle,ArrayList<Action>> ChangingTaskOrder(HashMap<Vehicle,ArrayList<Action>> plan) {
-    	
+    private HashMap<Integer,ArrayList<Action>> ChangingTaskOrder(HashMap<Integer,ArrayList<Action>> plan) {
     	
     	return null; 
     }
+    
     
     // UpdateTime(A, vi)
     private void UpdateTime() {
@@ -317,12 +338,14 @@ public class CentralizedTemplate implements CentralizedBehavior {
     	
     }
     
+    
     // Select the optimal plan in accordance with the lowest cost, add a probability p to the choice to escape local optima
-    private HashMap<Vehicle,ArrayList<Action>> LocalChoice(HashSet<HashMap<Vehicle,ArrayList<Action>>> set) {
+    private HashMap<Integer,ArrayList<Action>> LocalChoice(HashSet<HashMap<Integer,ArrayList<Action>>> set) {
     	
 		return null;
     	
     }
+    
     
     private void UpdateCost() {
     	
@@ -336,26 +359,18 @@ public class CentralizedTemplate implements CentralizedBehavior {
     	
     }
     
+    
     // Verifies if a Plan fulfills all Pre-Specified Constraints
-    
-// Constraint (2) satisfied by Construction, as every NextAction of an Action remains in the same vehicle context 
-// Constraint (3) satisfied by Construction, Uniqueness of Actions guranteed by change_functions and Init.    
-// Constraint (5) satisfied by Construction, every chain of actions starts with a vehicle
  
-    
+    // Constraint (2) satisfied by Construction, as every NextAction of an Action remains in the same vehicle context 
+    // Constraint (3) satisfied by Construction, Uniqueness of Actions guranteed by change_functions and Init.    
+    // Constraint (5) satisfied by Construction, every chain of actions starts with a vehicle
+ 
     private boolean verify_constraint(HashMap<Integer,ArrayList<Action>> plan) {
-    	
-    	
-    	
-    	
     	
     	for(Vehicle vehicle : agent.vehicles()) {
     			
-    		
-    		
-    		
     		// Check constraint (1), Event Times of following events are subsequent integers. 
-    		
     		int time = -1; 
     		for (Action action : plan.get(vehicle.id())){
     			
@@ -366,9 +381,7 @@ public class CentralizedTemplate implements CentralizedBehavior {
     			time++;
     			
     		}
-    		
-    		
-    	
+
     		// Constraint (4) and (7), Vehicle remains always below its maximum capacity
     		int current_load = 0;
     		for(Action action : plan.get(vehicle.id())) {
@@ -383,7 +396,6 @@ public class CentralizedTemplate implements CentralizedBehavior {
     				}
     			}
     			
-    			
     			// Pop the weight of the current load
     			if(action instanceof DeliveryAction){
     				current_load -= action.task.weight; 
@@ -395,25 +407,15 @@ public class CentralizedTemplate implements CentralizedBehavior {
     					return false;
     					
     				}
-    				
-    				
+    					
     			}
     			
     		}
-    		
-    		
-    		
-    		
-    		
 
-			
     	}
     	
 		return true;
-    	
-    	
-    	
-    	
+
     }
     
 }
