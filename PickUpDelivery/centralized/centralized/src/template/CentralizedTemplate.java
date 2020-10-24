@@ -295,13 +295,9 @@ public class CentralizedTemplate implements CentralizedBehavior {
     		
     	}
     	
-    	// Applying the changing task operator
-    	
-    	
-    	
- 
-    	
-    	
+    	// Applying the changing task order 
+    	// TODO
+   	
     	return null; 
     	
     }
@@ -310,7 +306,7 @@ public class CentralizedTemplate implements CentralizedBehavior {
     // Calculate the Cost Function
     private double CalculateCost(HashMap<Integer,ArrayList<Action>> plan) {
     	double cost = 0.0; 
-
+    	// TODO
     	return cost; 
     }
 
@@ -320,36 +316,80 @@ public class CentralizedTemplate implements CentralizedBehavior {
     
     // ChangingVehicle(A, v1, v2) 
     private HashMap<Integer,ArrayList<Action>> ChangingVehicle(Integer v1, Integer v2, HashMap<Integer,ArrayList<Action>> plan) {
+    	/*
+    	 * @param v1:	vehicle id of first vehicle
+    	 * @param v2: 	vehicle id of second vehicle
+    	 * @param plan:	current plan available
+    	 * @return:		updated plan after task has been swapped from vehicle 1 to vehicle 2
+    	 */
+   
+    	// get a random task from vehicle 1 -> equal number of pickUps and deliveries, thus we have num_actions/2 different tasks
+    	Random rand = new Random();
+    	int t = rand.nextInt(plan.get(v1).size() / 2); 
+    	int task_id = plan.get(v1).get(t).getTask().id;
+
+    	// remove action associated with position t from list
+    	Action action2swap = plan.get(v1).remove(t);
     	
-    	return null; 
+    	// search for corresponding pickup or delivery action
+    	for (Action a : plan.get(v1)) {
+    		if (a.getTask().id == task_id) {
+    			// and remove it from v1 if found
+    			Action action2swap_pendant = plan.get(v1).remove(plan.get(v1).indexOf(a));
+    			// add actions to the end of v2's plan
+    			// ensure that pickup action is added first
+    	    	if (action2swap instanceof PickUpAction) {
+    	    		plan.get(v2).add(action2swap);
+    	    		plan.get(v2).add(action2swap_pendant);
+    	    	}
+    	    	else if (action2swap instanceof DeliveryAction) {
+    	    		plan.get(v2).add(action2swap_pendant);
+    	    		plan.get(v2).add(action2swap);
+    	    	}
+    	    	else {
+    	    		System.out.println("Action list for vehicle " + v1 + "contains an action which has invalid type.");
+    	    		return null;
+    	    	}
+    	    	 
+    			// stop searching
+    			break;
+    		}
+    	}
+    	
+    	UpdateTime(plan);
+    	UpdateCost(plan);
+    	
+    	return plan;
+    	
     }
     
     
     // ChangingTaskOrder(A, vi, tIdx1, tIdx2) replace with a function changing the order of a PickUp or Delivery Action 
     private HashMap<Integer,ArrayList<Action>> ChangingTaskOrder(HashMap<Integer,ArrayList<Action>> plan) {
-    	
+    
+    	// TODO
     	return null; 
     }
     
     
     // UpdateTime(A, vi)
-    private void UpdateTime() {
+    private void UpdateTime(HashMap<Integer,ArrayList<Action>> plan) {
     	
-    	
+    	// TODO
     }
     
     
     // Select the optimal plan in accordance with the lowest cost, add a probability p to the choice to escape local optima
     private HashMap<Integer,ArrayList<Action>> LocalChoice(HashSet<HashMap<Integer,ArrayList<Action>>> set) {
-    	
+    	// TODO
 		return null;
     	
     }
     
     
-    private void UpdateCost() {
+    private void UpdateCost(HashMap<Integer,ArrayList<Action>> plan) {
     	
-    	
+    	// TODO
     }
     
     
