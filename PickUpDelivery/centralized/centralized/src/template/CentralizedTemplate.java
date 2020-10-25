@@ -316,7 +316,7 @@ public class CentralizedTemplate implements CentralizedBehavior {
     		
     	}
     	
-    	// Applying the changing task order 
+    	// Applying the changing task order operator
     	// TODO
    	
     	return neighbors; 
@@ -440,10 +440,15 @@ public class CentralizedTemplate implements CentralizedBehavior {
     
     
     // Debug Function to print out a plan in the console
-    private void print_plan() {
+    private void print_plan(HashMap<Integer,ArrayList<Action>> plan) {
     	
+    	for (int vehicle_id=0; vehicle_id < plan.size(); vehicle_id++) {
+    		System.out.print("Plan for vehicle: " + vehicle_id + ": ");
+    		System.out.print(plan.get(vehicle_id).toString() + "\n");
+    	}
     	
     }
+    
     
     
     // Verifies if a Plan fulfills all Pre-Specified Constraints
