@@ -35,13 +35,9 @@ public abstract class Action {
 	}
 
 
-
-
 	public Task getTask() {
 		return task;
 	}
-
-
 
 
 	public void setTask(Task task) {
@@ -49,13 +45,9 @@ public abstract class Action {
 	}
 
 
-
-
 	public int getTime() {
 		return time;
 	}
-
-
 
 
 	public void setTime(int time) {
@@ -63,13 +55,9 @@ public abstract class Action {
 	}
 
 
-
-
 	public double getCosts() {
 		return costs;
 	}
-
-
 
 
 	public void setCosts(double costs) {
@@ -77,23 +65,14 @@ public abstract class Action {
 	}
 
 
-
-
 	public Vehicle getVehicle() {
 		return vehicle;
 	}
-
-
 
 
 	public void setVehicle(Vehicle vehicle) {
 		this.vehicle = vehicle;
 	}
 	
-	
 
-	
-	
-	
-	
 }
