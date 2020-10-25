@@ -146,31 +146,22 @@ public class CentralizedTemplate implements CentralizedBehavior {
     	int counter = 0;
     	HashMap<Integer,ArrayList<Action>> plan_old;
     	HashSet<HashMap<Integer,ArrayList<Action>>> neighbors;
-    	HashSet<HashMap<Integer,ArrayList<Action>>> plans = new HashSet<HashMap<Integer, ArrayList<Action>>>();
-    	
-    	plans.add(plan);
     	
     	// iterate
     	System.out.println("Start Iteration ... "); 
     	while(counter < 10000 || time_needed > timeout) {
-    		System.out.println("Looking for Neighbors ... "); 
+  
     		neighbors = ChooseNeighbours(plan);
-    		System.out.println("Choosing local solution ... "); 
-    		
-    		System.out.println("Dev: Neighboring CS Plans !"); 
-    		for(HashMap<Integer, ArrayList<Action>> neigh : neighbors) {
-    			print_plan(neigh); 
-    		}
-    		
+    		/*for (HashMap<Integer,ArrayList<Action>> p : neighbors) {
+    			System.out.println(counter);
+    			print_plan(p);
+    		}*/
     		plan = LocalChoice(neighbors);
     		
     		counter += 1;
     		time_needed = System.currentTimeMillis() - time_start;
     	}
     	
-    	
-    	// Get best plan from all plans
-    	// TODO
     	
     	System.out.println("Parsing Plan! "); 
     
@@ -292,7 +283,14 @@ public class CentralizedTemplate implements CentralizedBehavior {
 
     	
     	Random rand = new Random();
-    	int v_i = rand.nextInt(this.agent.vehicles().size());
+    	
+    	int v_i = 0;
+    	
+    	do {
+    		v_i = rand.nextInt(this.agent.vehicles().size());
+    	}
+    	while(plan.get(v_i).size() == 0);
+    	
     	
     	
     	// Applying the changing vehicle order operator
@@ -303,8 +301,6 @@ public class CentralizedTemplate implements CentralizedBehavior {
     		
     		
     		new_plan = ChangingVehicle(v_i, v_j, copyPlan(plan));
-    		System.out.println("Choose Vehicle: " + v_i + " and Vehicle " + v_j); 
-    		print_plan(new_plan); 
     		
     		if(verify_constraint(new_plan)){
     			neighbors.add(new_plan);
@@ -314,7 +310,29 @@ public class CentralizedTemplate implements CentralizedBehavior {
     	}
     	
     	// Applying the changing task order operator
-    	// TODO
+    	int vehicle = rand.nextInt(this.agent.vehicles().size());
+    	Action temp;
+    	
+    	for (int idx1=0; idx1 < plan.get(vehicle).size() - 1; idx1 ++) {
+    		for (int idx2=idx1+1; idx2 < plan.get(vehicle).size(); idx2 ++) {
+
+    			new_plan = copyPlan(plan);
+    			
+    			//System.out.println("Start. After: " + new_plan.get(vehicle).get(idx1) + ", " + new_plan.get(vehicle).get(idx2));
+    			
+    			temp = new_plan.get(vehicle).get(idx1);
+    			new_plan.get(vehicle).set(idx1, new_plan.get(vehicle).get(idx2));
+    			new_plan.get(vehicle).set(idx2, temp);
+    			
+    			//System.out.println("After: " + new_plan.get(vehicle).get(idx1) + ", " + new_plan.get(vehicle).get(idx2));
+    			
+    			UpdateTime(new_plan, vehicle, idx1);
+    			if (verify_constraint(new_plan)) {
+    				
+    				neighbors.add(new_plan);
+    			}
+    		}
+    	}
    	
 
     	return neighbors; 
@@ -374,15 +392,19 @@ public class CentralizedTemplate implements CentralizedBehavior {
 
     	// remove action associated with position t from list
     	Action action2swap = plan.get(v1).remove(t);
+    	Action action2swap_pendant = null;
     	
     	// search for corresponding pickup or delivery action
     	for (Action a : plan.get(v1)) {
     		if (a.getTask().id == task_id) {
     			// and remove it from v1 if found
-    			Action action2swap_pendant = plan.get(v1).remove(plan.get(v1).indexOf(a));
+    			int a_idx = plan.get(v1).indexOf(a);
+    			if (a_idx < t) {
+    				t = a_idx;
+    			}
+    			action2swap_pendant = plan.get(v1).remove(a_idx);
     			// add actions to the end of v2's plan
     			// ensure that pickup action is added first
-    			
     			
     			
     	    	if (action2swap instanceof PickUpAction) {
@@ -403,7 +425,16 @@ public class CentralizedTemplate implements CentralizedBehavior {
     		}
     	}
     	
-    	UpdateTime(plan);
+    	if (action2swap.time > action2swap_pendant.time) {
+			UpdateTime(plan, v2, plan.get(v2).indexOf(action2swap_pendant));
+		}
+    	else {
+    		UpdateTime(plan, v2, plan.get(v2).indexOf(action2swap));
+    	}
+ 
+ 
+    	UpdateTime(plan, v1, t);
+  
     	UpdateCost(plan);
     	
     	return plan;
@@ -420,23 +451,40 @@ public class CentralizedTemplate implements CentralizedBehavior {
     
     
     // UpdateTime(A, vi)
-    private void UpdateTime(HashMap<Integer,ArrayList<Action>> plan) {
+    private void UpdateTime(HashMap<Integer,ArrayList<Action>> plan, int vehicle_id, int idx) {
     	
-    	// TODO
+    	if (idx != 0) {
+    		idx -= 1;
+    	}
+    	
+    	for (int i = idx; i < plan.get(vehicle_id).size(); i++) {
+    		plan.get(vehicle_id).get(i).time = i;
+    	}
     }
     
     
     // Select the optimal plan in accordance with the lowest cost, add a probability p to the choice to escape local optima
     private HashMap<Integer,ArrayList<Action>> LocalChoice(HashSet<HashMap<Integer,ArrayList<Action>>> set) {
-    	// TODO
-		return null;
+    	
+    	double min_costs = Double.POSITIVE_INFINITY;
+    	HashMap<Integer,ArrayList<Action>>  best_plan = null;
+    	
+    	for (HashMap<Integer,ArrayList<Action>> plan : set) {
+    		double cur_costs = CalculateCost(plan);
+    		if (cur_costs < min_costs) {
+    			min_costs = cur_costs;
+    			best_plan = plan;
+    		}
+    	}
+    	
+    	
+		return best_plan;
     	
     }
     
     
     private void UpdateCost(HashMap<Integer,ArrayList<Action>> plan) {
     	
-    	// TODO
     }
     
     
