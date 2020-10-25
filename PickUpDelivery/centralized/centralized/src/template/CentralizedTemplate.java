@@ -138,18 +138,7 @@ public class CentralizedTemplate implements CentralizedBehavior {
     	System.out.print("\n" + plan.toString() + "\n");
     	
     	
-    	
-    	
-    	
-    	HashMap<Integer,ArrayList<Action>> copy = copyPlan(plan);
-    	
-    	for (Vehicle vehicle : agent.vehicles()) {
-    		
-    		System.out.println("Dev: The Plan for Vehicel: " + vehicle.id() + "   " + plan.get(vehicle.id()).toString()); 
-    		System.out.println("Dev: The Copy for Vehicel: " + vehicle.id() + "   " + copy.get(vehicle.id()).toString()); 
-    		System.out.println("Dev: The Object reference for the Plan" + plan.get(vehicle.id())); 
-    		System.out.println("Dev: The Object reference for the Copy" + copy.get(vehicle.id()));
-    	}
+    	print_plan(plan); 
     	
     	System.out.println("Dev: Check if the Initial Plan is a fullfilling the constraints: " + verify_constraint(plan)); 
     	System.out.println("Dev: The costs for the Initial Plan are as follows: " + CalculateCost(plan));
@@ -164,18 +153,17 @@ public class CentralizedTemplate implements CentralizedBehavior {
     	// iterate
     	System.out.println("Start Iteration ... "); 
     	while(counter < 10000 || time_needed > timeout) {
-    		plan_old = plan;
     		System.out.println("Looking for Neighbors ... "); 
-    		neighbors = ChooseNeighbours(plan_old);
+    		neighbors = ChooseNeighbours(plan);
     		System.out.println("Choosing local solution ... "); 
-    		plan = LocalChoice(neighbors);
-    		System.out.println("Verify that the local choice is a valid solution ... "); 
     		
-    		/* Move this into the choose Neighbors given the Constraint that all Neighbors should be valid solutions
-    		 * if (verify_constraint(plan)) {
-    			plans.add(plan);
-    		 }
-    		*/ 
+    		System.out.println("Dev: Neighboring CS Plans !"); 
+    		for(HashMap<Integer, ArrayList<Action>> neigh : neighbors) {
+    			print_plan(neigh); 
+    		}
+    		
+    		plan = LocalChoice(neighbors);
+    		
     		counter += 1;
     		time_needed = System.currentTimeMillis() - time_start;
     	}
@@ -301,6 +289,8 @@ public class CentralizedTemplate implements CentralizedBehavior {
     	
     	HashSet<HashMap<Integer,ArrayList<Action>>> neighbors = new HashSet<HashMap<Integer,ArrayList<Action>>>();
     	HashMap<Integer,ArrayList<Action>> new_plan;
+
+    	
     	Random rand = new Random();
     	int v_i = rand.nextInt(this.agent.vehicles().size());
     	
@@ -311,14 +301,22 @@ public class CentralizedTemplate implements CentralizedBehavior {
     			continue;
     		}
     		
-    		new_plan = ChangingVehicle(v_i, v_j, plan);
-    		neighbors.add(new_plan);
+    		
+    		new_plan = ChangingVehicle(v_i, v_j, copyPlan(plan));
+    		System.out.println("Choose Vehicle: " + v_i + " and Vehicle " + v_j); 
+    		print_plan(new_plan); 
+    		
+    		if(verify_constraint(new_plan)){
+    			neighbors.add(new_plan);
+    		}
+    		
     		
     	}
     	
     	// Applying the changing task order operator
     	// TODO
    	
+
     	return neighbors; 
     	
     }
@@ -384,6 +382,9 @@ public class CentralizedTemplate implements CentralizedBehavior {
     			Action action2swap_pendant = plan.get(v1).remove(plan.get(v1).indexOf(a));
     			// add actions to the end of v2's plan
     			// ensure that pickup action is added first
+    			
+    			
+    			
     	    	if (action2swap instanceof PickUpAction) {
     	    		plan.get(v2).add(action2swap);
     	    		plan.get(v2).add(action2swap_pendant);
