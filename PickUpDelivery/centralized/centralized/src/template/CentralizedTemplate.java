@@ -74,16 +74,14 @@ public class CentralizedTemplate implements CentralizedBehavior {
         // Check if the Behaviour of the Reference to PickUpAction Object in the DeliveryAction Object works as expected
         Task task = (Task) tasks.toArray()[0]; 
  		PickUpAction pickup = new PickUpAction(task,0, vehicles.get(0), 0.0); 
-		DeliveryAction delievery = new DeliveryAction(task,1, vehicles.get(0), 0.0, pickup);
-		System.out.println("Pickup Action: " + pickup.toString());
-		System.out.println("Delivery Action: " + delievery.toString());
-		System.out.println("Change the Time");
-		pickup.time = 5; 
+		DeliveryAction delievery = new DeliveryAction(task,1, vehicles.get(0), 0.0);
 		System.out.println("Pickup Action: " + pickup.toString());
 		System.out.println("Delivery Action: " + delievery.toString());
         
-        
+		
         result = SLS_algorithm(tasks, topology, agent, timeout_plan); 
+        
+        
         
         
         for (Plan plan : result) {
@@ -138,6 +136,20 @@ public class CentralizedTemplate implements CentralizedBehavior {
     	HashMap<Integer,ArrayList<Action>> plan = SelectInitialSolution( tasks, topology, agent); 
     	System.out.println("Finished Computing Initital Solution! "); 
     	System.out.print("\n" + plan.toString() + "\n");
+    	
+    	
+    	
+    	
+    	
+    	HashMap<Integer,ArrayList<Action>> copy = copyPlan(plan);
+    	
+    	for (Vehicle vehicle : agent.vehicles()) {
+    		
+    		System.out.println("Dev: The Plan for Vehicel: " + vehicle.id() + "   " + plan.get(vehicle.id()).toString()); 
+    		System.out.println("Dev: The Copy for Vehicel: " + vehicle.id() + "   " + copy.get(vehicle.id()).toString()); 
+    		System.out.println("Dev: The Object reference for the Plan" + plan.get(vehicle.id())); 
+    		System.out.println("Dev: The Object reference for the Copy" + copy.get(vehicle.id()));
+    	}
     	
     	System.out.println("Dev: Check if the Initial Plan is a fullfilling the constraints: " + verify_constraint(plan)); 
     	System.out.println("Dev: The costs for the Initial Plan are as follows: " + CalculateCost(plan));
@@ -227,10 +239,10 @@ public class CentralizedTemplate implements CentralizedBehavior {
     			
     		}
     		
-    		PickUpAction pickup = new PickUpAction(task,current_time[smallest], veh, 0.0); 
-    		plan.get(smallest).add(pickup);
+    	
+    		plan.get(smallest).add(new PickUpAction(task,current_time[smallest], veh, 0.0));
     		current_time[smallest]++;    		
-    		plan.get(smallest).add(new DeliveryAction(task,current_time[smallest], veh, 0.0, pickup)); 
+    		plan.get(smallest).add(new DeliveryAction(task,current_time[smallest], veh, 0.0)); 
     		current_time[smallest]++; 
     		
     		current_load[smallest] += task.weight;
@@ -480,9 +492,16 @@ public class CentralizedTemplate implements CentralizedBehavior {
     				
     				
     				// Violation of (6) Check if the package is already loaded at the time of delivery
-    				if(((DeliveryAction) action).pickUpAction.time > action.time)  {
-    					
-    					return false;
+    				for(Action pick_action : plan.get(vehicle.id())) {
+    					if(pick_action instanceof PickUpAction) {
+    						if(pick_action.task.id == action.task.id) {
+    							if(pick_action.time > action.time) {
+    								return false;
+    							}
+    							
+    						}
+    						
+    					}
     					
     				}
     					
@@ -494,6 +513,39 @@ public class CentralizedTemplate implements CentralizedBehavior {
     	
 		return true;
 
+    }
+    
+    
+    private HashMap<Integer,ArrayList<Action>> copyPlan(HashMap<Integer,ArrayList<Action>> plan){
+    	
+    	HashMap<Integer,ArrayList<Action>> copy = new HashMap<Integer,ArrayList<Action>>(); 
+    	
+    	for(Vehicle vehicle : agent.vehicles()) {
+    		
+    		ArrayList<Action> list_copy = new ArrayList<Action>(); 
+    		
+    		for(Action action : plan.get(vehicle.id())){
+    			
+    			Action copy_action; 
+    			
+    			if(action instanceof DeliveryAction){
+    				copy_action = new DeliveryAction((DeliveryAction) action); 
+    				
+    			}else{
+    				copy_action = new PickUpAction((PickUpAction) action); 
+    				
+    			}
+    			
+    			list_copy.add(copy_action); 
+    				
+    		}
+    		
+    		copy.put(vehicle.id(), list_copy); 
+    		
+    		
+    	}
+    	
+		return copy;
     }
     
 }
