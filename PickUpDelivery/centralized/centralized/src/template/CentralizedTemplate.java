@@ -432,7 +432,7 @@ public class CentralizedTemplate implements CentralizedBehavior {
     	
     	for (int vehicle_id=0; vehicle_id < plan.size(); vehicle_id++) {
     		System.out.print("Plan for vehicle: " + vehicle_id + ": ");
-    		System.out.print(plan.get(vehicle_id).toString());
+    		System.out.print(plan.get(vehicle_id).toString() + "\n");
     	}
     	
     }
