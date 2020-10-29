@@ -7,7 +7,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import logist.LogistSettings;
-import java.io.File; 
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 import logist.Measures;
 import logist.behavior.AuctionBehavior;
@@ -35,6 +39,9 @@ public class CentralizedTemplate implements CentralizedBehavior {
     private Agent agent;
     private long timeout_setup;
     private long timeout_plan;
+    private HashMap<Integer,ArrayList<Action>> plan; 
+    private double p; 
+    private long num_iterations; 
     
     @Override
     public void setup(Topology topology, TaskDistribution distribution,
@@ -49,6 +56,9 @@ public class CentralizedTemplate implements CentralizedBehavior {
             System.out.println("There was a problem loading the configuration file.");
         }
         
+
+        
+        
         // the setup method cannot last more than timeout_setup milliseconds
         timeout_setup = ls.get(LogistSettings.TimeoutKey.SETUP);
         // the plan method cannot execute more than timeout_plan milliseconds
@@ -57,7 +67,12 @@ public class CentralizedTemplate implements CentralizedBehavior {
         this.topology = topology;
         this.distribution = distribution;
         this.agent = agent;
-   
+        
+        // Probaility to reject the new best plan and kep the current/old 
+        this.p = 0.4; 
+        this.num_iterations = 100000; 
+        System.out.println("The Number of Iterations is: " + num_iterations);
+        System.out.println("The probability to keep the current plan is set to : " + p); 
     }
 
     
@@ -76,15 +91,12 @@ public class CentralizedTemplate implements CentralizedBehavior {
  		PickUpAction pickup = new PickUpAction(task,0, vehicles.get(0), 0.0); 
 		DeliveryAction delievery = new DeliveryAction(task,1, vehicles.get(0), 0.0);
 		System.out.println("Pickup Action: " + pickup.toString());
-		System.out.println("Delivery Action: " + delievery.toString());
+		System.out.println("Delivery Action: " + delievery.toString()); 
         
 		
-        result = SLS_algorithm(tasks, topology, agent, timeout_plan); 
+		result = SLS_algorithm(tasks, topology, agent, p);
         
-        
-        
-        
-        for (Plan plan : result) {
+        /*for (Plan plan : result) {
         	System.out.println("\n Resulting plans: " + plan.toString()+ "\n"); 
         }
         
@@ -92,9 +104,16 @@ public class CentralizedTemplate implements CentralizedBehavior {
         	System.out.println("Start City of Vehicle " + veh.id() + " is " + veh.getCurrentCity()); 
         }
         
+        */ 
+		
         long time_end = System.currentTimeMillis();
         long duration = time_end - time_start;
-        System.out.println("The plan was generated in " + duration + " milliseconds.");
+        System.out.println("Costs of the Final Plan: " + CalculateCost(plan));
+        System.out.println("The plan was generated in " + duration + " milliseconds."); 
+        
+		
+		
+		
         
         return result;
     }
@@ -127,13 +146,14 @@ public class CentralizedTemplate implements CentralizedBehavior {
     
 
     // Base call to Compute the Plan
-    private List<Plan> SLS_algorithm(TaskSet tasks, Topology topology, Agent agent, double timeout) {
+    private List<Plan> SLS_algorithm(TaskSet tasks, Topology topology, Agent agent, double p) {
     	
     	long time_start = System.currentTimeMillis();
     	long time_needed = 0;
+    	long wrap_up_time = (long)(timeout_plan * 0.005); 
     	
     	System.out.println("Computing Initial Solution ... ");
-    	HashMap<Integer,ArrayList<Action>> plan = SelectInitialSolution( tasks, topology, agent); 
+    	plan = SelectInitialSolution( tasks, topology, agent); 
     	System.out.println("Finished Computing Initital Solution! "); 
     	System.out.print("\n" + plan.toString() + "\n");
     	
@@ -149,25 +169,31 @@ public class CentralizedTemplate implements CentralizedBehavior {
     	
     	// iterate
     	System.out.println("Start Iteration ... "); 
-    	while(counter < 10000 || time_needed > timeout) {
-  
+    	while(counter < num_iterations) {
     		neighbors = ChooseNeighbours(plan);
+    		
     		/*for (HashMap<Integer,ArrayList<Action>> p : neighbors) {
     			System.out.println(counter);
     			print_plan(p);
     		}*/
-    		plan = LocalChoice(neighbors);
+    		
+    		plan = LocalChoice(neighbors, plan, p);
     		
     		counter += 1;
     		time_needed = System.currentTimeMillis() - time_start;
+    		
+    		if (time_needed > timeout_plan - wrap_up_time) {
+    			System.out.println("TimeOut Reached, Parsing Plan!");
+    			break; 
+    		}
     	}
     	
-    	
     	System.out.println("Parsing Plan! "); 
-    
+    	System.out.println("Costs of the Plan: " + CalculateCost(plan)); 
+    	
     	return parsePlan(plan); 
     }
-    
+    	
 
     /* HashMap Mapping Vehicle to Actions for the Vehicle
      * 
@@ -188,11 +214,19 @@ public class CentralizedTemplate implements CentralizedBehavior {
     	HashMap<Integer, ArrayList<Action>> plan = new HashMap<Integer,ArrayList<Action>>(); 
     	double[] current_load = new double[agent.vehicles().size()];
     	int[] current_time = new int[agent.vehicles().size()];
+    	double task_weights =  0; 
     	Vehicle veh = null; 
     	
     	for(Vehicle vehicle : agent.vehicles()) {
     		plan.put(vehicle.id(), new ArrayList<Action>()); 
     	}
+    	
+    	for (Task task : tasks) {
+    		task_weights += task.weight;
+    	}
+    	
+    	
+    	task_weights = (task_weights + 1) / agent.vehicles().size(); 
     	
     	// Check for each Tasks what the closest vehicle is 
     	for (Task task : tasks) {
@@ -203,7 +237,7 @@ public class CentralizedTemplate implements CentralizedBehavior {
     		for(Vehicle vehicle : agent.vehicles()) {
     			
     			// Check if it has enough room
-    			if(current_load[vehicle.id()] + task.weight < vehicle.capacity()) {
+    			if(current_load[vehicle.id()] + task.weight < task_weights) {
     				
     				// How close it is
     				if( task.pickupCity.distanceTo(vehicle.getCurrentCity()) < min_distance) {
@@ -235,6 +269,10 @@ public class CentralizedTemplate implements CentralizedBehavior {
     
     // Parse the Plan to the 
     private List<Plan> parsePlan(HashMap<Integer,ArrayList<Action>> intermediate_plans){
+    	
+    	long time_start = System.currentTimeMillis();
+    	long time_needed = 0;
+    	
     	
     	List<Plan> result = new ArrayList<Plan>();
     	
@@ -271,6 +309,7 @@ public class CentralizedTemplate implements CentralizedBehavior {
 			result.add(plan); 
     	}
     	
+    	System.out.println("Time needed to Parse the Plan: " + (System.currentTimeMillis()- time_start));
     	return result; 
     }
     
@@ -443,6 +482,7 @@ public class CentralizedTemplate implements CentralizedBehavior {
     
     
     // ChangingTaskOrder(A, vi, tIdx1, tIdx2) replace with a function changing the order of a PickUp or Delivery Action 
+    // Currently implemented inside the Choose Neighbors Function
     private HashMap<Integer,ArrayList<Action>> ChangingTaskOrder(HashMap<Integer,ArrayList<Action>> plan) {
     
     	// TODO
@@ -464,11 +504,10 @@ public class CentralizedTemplate implements CentralizedBehavior {
     
     
     // Select the optimal plan in accordance with the lowest cost, add a probability p to the choice to escape local optima
-    private HashMap<Integer,ArrayList<Action>> LocalChoice(HashSet<HashMap<Integer,ArrayList<Action>>> set) {
+    private HashMap<Integer,ArrayList<Action>> LocalChoice(HashSet<HashMap<Integer,ArrayList<Action>>> set, HashMap<Integer, ArrayList<Action>> current_plan, double p) {
     	
     	double min_costs = Double.POSITIVE_INFINITY;
     	HashMap<Integer,ArrayList<Action>>  best_plan = null;
-    	
     	for (HashMap<Integer,ArrayList<Action>> plan : set) {
     		double cur_costs = CalculateCost(plan);
     		if (cur_costs < min_costs) {
@@ -478,7 +517,15 @@ public class CentralizedTemplate implements CentralizedBehavior {
     	}
     	
     	
-		return best_plan;
+    	Random rand = new Random();
+    	
+    	// Adds a Currently hardcoded random chance to either select the best or the old plan
+    	if(rand.nextDouble() < p) {
+    		return current_plan;
+    	}else{
+    		return best_plan;
+    	}
+		
     	
     }
     
