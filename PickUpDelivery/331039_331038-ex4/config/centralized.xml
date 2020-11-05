@@ -48,6 +48,18 @@
 			<!-- the third vehicle (green) -->
 			
 			<!-- the fourth vehicle (yellow) -->
+<<<<<<< HEAD:PickUpDelivery/centralized/centralized/config/centralized.xml
+=======
+			<vehicle name="Vehicle 4">
+				<set color="#ffff00" />
+				<set home="Norwich" />
+				<set speed="90" />
+				<set capacity="30" />
+				<set cost-per-km="5" />
+			</vehicle>
+            
+            
+>>>>>>> 2948ffd1e749c86d41241e63938bc19048ab731e:PickUpDelivery/331039_331038-ex4/config/centralized.xml
 			
 		</company>
 	</companies>
