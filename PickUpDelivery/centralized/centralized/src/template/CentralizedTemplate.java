@@ -70,7 +70,7 @@ public class CentralizedTemplate implements CentralizedBehavior {
         
         // Probaility to reject the new best plan and kep the current/old 
         this.p = 0.4; 
-        this.num_iterations = 100000; 
+        this.num_iterations = 50000; 
         System.out.println("The Number of Iterations is: " + num_iterations);
         System.out.println("The probability to keep the current plan is set to : " + p); 
     }
