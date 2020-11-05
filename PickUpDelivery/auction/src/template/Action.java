@@ -20,13 +20,11 @@ public abstract class Action {
 	protected Task task; 
 	protected int time; 
 	protected Vehicle vehicle; 
-	protected double costs; 
+
 	
 	
-	
-	
-	public Action(Task task, int time, Vehicle vehicle, double costs){
-		this.setCosts(costs); 
+	public Action(Task task, int time, Vehicle vehicle){
+		
 		this.setTask(task); 
 		this.setVehicle(vehicle);
 		this.setTime(time); 
@@ -54,15 +52,6 @@ public abstract class Action {
 		this.time = time;
 	}
 
-
-	public double getCosts() {
-		return costs;
-	}
-
-
-	public void setCosts(double costs) {
-		this.costs = costs;
-	}
 
 
 	public Vehicle getVehicle() {

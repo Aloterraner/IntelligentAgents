@@ -5,13 +5,13 @@ import logist.task.Task;
 
 public class PickUpAction extends Action {
 	
-	public PickUpAction(Task task, int time, Vehicle vehicle, double costs) {
-		super(task, time, vehicle, costs);	
+	public PickUpAction(Task task, int time, Vehicle vehicle) {
+		super(task, time, vehicle);	
 	}
 	
 	
 	public PickUpAction(PickUpAction pickup_action){
-		super(pickup_action.task, pickup_action.time, pickup_action.vehicle, pickup_action.costs); 
+		super(pickup_action.task, pickup_action.time, pickup_action.vehicle); 
 	}
 	
 	

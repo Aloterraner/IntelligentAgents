@@ -5,13 +5,13 @@ import logist.task.Task;
 
 public class DeliveryAction extends Action{
 
-	public DeliveryAction(Task task, int time, Vehicle vehicle, double costs) {
-		super(task, time, vehicle, costs);
+	public DeliveryAction(Task task, int time, Vehicle vehicle) {
+		super(task, time, vehicle);
 	}
 
 	
 	public DeliveryAction(DeliveryAction delivery_action){
-		super(delivery_action.task, delivery_action.time, delivery_action.vehicle, delivery_action.costs); 
+		super(delivery_action.task, delivery_action.time, delivery_action.vehicle); 
 	}
 	
 	

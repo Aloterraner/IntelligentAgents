@@ -68,17 +68,14 @@ public class AuctionTemplate implements AuctionBehavior {
 	
 	@Override
 	public Long askPrice(Task task) {
-		
-		
-		won_tasks.add(task);
 
 		if (this.first_it) {
-	    	old_plan = SelectInitialSolution(won_tasks, topology, agent); 
+	    	old_plan = SelectInitialSolution(won_tasks, topology, agent, task); 
 	    	this.first_it = false;
 	    	
 		}
 		else {
-			plan = SLS_algorithm(won_tasks, topology, agent, 0.4);
+			plan = SLS_algorithm(won_tasks, topology, agent, 0.4, task);
 		}
 
 
@@ -132,7 +129,7 @@ public class AuctionTemplate implements AuctionBehavior {
 	}
 	
 	
-    private HashMap<Integer,ArrayList<Action>> SLS_algorithm(Set<Task> tasks, Topology topology, Agent agent, double p) {
+    private HashMap<Integer,ArrayList<Action>> SLS_algorithm(Set<Task> tasks, Topology topology, Agent agent, double p, Task new_task) {
     	/*
     	 * Implementation of the SLS algorithm. Base call to compute the plan.
     	 * 
@@ -140,15 +137,19 @@ public class AuctionTemplate implements AuctionBehavior {
     	 * @param topology:	topology used in this run
     	 * @param agent:	agent used in this run
     	 * @param p:		rejection probability used in local_choice()
-    	 * @return:			parsed plan for logist platform
+    	 * @param task:		new task which we bid for
+    	 * @return:			plan object
     	 */
     	
     	long time_start = System.currentTimeMillis();
     	long time_needed = 0;
     	long wrap_up_time = (long)(timeout_plan * 0.005); 
     	
+    	// add new task to task set
+    	int last_time = plan.get(agent.vehicles().get(0)).get(plan.get(agent.vehicles().get(0)).size() - 1).getTime();
+    	plan.get(agent.vehicles().get(0)).add(new PickUpAction(new_task, last_time + 1, agent.vehicles().get(0)));
     	
-    	print_plan(plan); 
+    	print_plan(plan);
     	
     	int counter = 0;
     	HashMap<Integer,ArrayList<Action>> plan_old;
@@ -175,7 +176,7 @@ public class AuctionTemplate implements AuctionBehavior {
     }
     	
 
-    private HashMap<Integer,ArrayList<Action>> SelectInitialSolution(Set<Task> tasks, Topology topology, Agent agent){
+    private HashMap<Integer,ArrayList<Action>> SelectInitialSolution(Set<Task> tasks, Topology topology, Agent agent, Task new_task){
     	/*
     	 * Compute an initial plan based on distributing each task to the nearest vehicle that has some capacity left. 
     	 * HashMap Mapping Vehicle to Actions for the Vehicle
@@ -191,6 +192,10 @@ public class AuctionTemplate implements AuctionBehavior {
 	     * @param agent:	agent used in this run
 	     * @return:			initial (naive) plan as described above
     	 */
+    	
+    	
+    	// add new task to taskset
+    	tasks.add(new_task);
     	
     	// Generate a basic array in the length of the number of vehicles
     	HashMap<Integer, ArrayList<Action>> plan = new HashMap<Integer,ArrayList<Action>>(); 
