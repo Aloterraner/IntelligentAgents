@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import logist.Measures;
 import logist.behavior.AuctionBehavior;
@@ -32,7 +33,10 @@ public class AuctionTemplate implements AuctionBehavior {
 	private Random random;
 	private Vehicle vehicle;
 	private City currentCity;
-
+	private HashMap<Integer,ArrayList<Action>> plan;
+	private boolean first_it;
+	private Set<Task> won_tasks;
+	
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution,
 			Agent agent) {
@@ -42,7 +46,10 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.agent = agent;
 		this.vehicle = agent.vehicles().get(0);
 		this.currentCity = vehicle.homeCity();
-
+		this.plan = new HashMap<Integer,ArrayList<Action>>();
+		this.first_it = true;
+		this.won_tasks = new HashSet<Task>();
+		
 		long seed = -9019554669489983951L * currentCity.hashCode() * agent.id();
 		this.random = new Random(seed);
 	}
@@ -56,6 +63,20 @@ public class AuctionTemplate implements AuctionBehavior {
 	
 	@Override
 	public Long askPrice(Task task) {
+		
+		HashMap<Integer,ArrayList<Action>> cur_plan = new HashMap<Integer,ArrayList<Action>>();
+		
+		won_tasks.add(task);
+
+		if (this.first_it) {
+	    	cur_plan = SelectInitialSolution(won_tasks, topology, agent); 
+	    	this.first_it = false;
+	    	
+		}
+		else {
+			List<Plan> plans = SLS_algorithm(won_tasks, topology, agent, 0.4);
+		}
+
 
 		if (vehicle.capacity() < task.weight)
 			return null;
@@ -75,19 +96,13 @@ public class AuctionTemplate implements AuctionBehavior {
 	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
 		
-//		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
-
-		Plan planVehicle1 = naivePlan(vehicle, tasks);
-
-		List<Plan> plans = new ArrayList<Plan>();
-		plans.add(planVehicle1);
-		while (plans.size() < vehicles.size())
-			plans.add(Plan.EMPTY);
-
-		return plans;
+		//		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
+		
+		return parsePlan(this.plan);
+		
 	}
 
-	private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
+	private Plan naivePlan(Vehicle vehicle, Set<Task> tasks) {
 		City current = vehicle.getCurrentCity();
 		Plan plan = new Plan(current);
 
@@ -111,8 +126,7 @@ public class AuctionTemplate implements AuctionBehavior {
 	}
 	
 	
-	
-    private List<Plan> SLS_algorithm(TaskSet tasks, Topology topology, Agent agent, double p) {
+    void SLS_algorithm(Set<Task> tasks, Topology topology, Agent agent, double p) {
     	/*
     	 * Implementation of the SLS algorithm. Base call to compute the plan.
     	 * 
@@ -127,10 +141,6 @@ public class AuctionTemplate implements AuctionBehavior {
     	long time_needed = 0;
     	long wrap_up_time = (long)(timeout_plan * 0.005); 
     	
-    	System.out.println("Computing Initial Solution ... ");
-    	plan = SelectInitialSolution( tasks, topology, agent); 
-    	System.out.println("Finished Computing Initital Solution! "); 
-    	System.out.print("\n" + plan.toString() + "\n");
     	
     	print_plan(plan); 
     	
@@ -157,14 +167,12 @@ public class AuctionTemplate implements AuctionBehavior {
     		}
     	}
     	
-    	System.out.println("Parsing Plan! "); 
     	System.out.println("Costs of the Plan: " + CalculateCost(plan)); 
     	
-    	return parsePlan(plan); 
     }
     	
 
-    private HashMap<Integer,ArrayList<Action>> SelectInitialSolution(TaskSet tasks, Topology topology, Agent agent){
+    private HashMap<Integer,ArrayList<Action>> SelectInitialSolution(Set<Task> tasks, Topology topology, Agent agent){
     	/*
     	 * Compute an initial plan based on distributing each task to the nearest vehicle that has some capacity left. 
     	 * HashMap Mapping Vehicle to Actions for the Vehicle
