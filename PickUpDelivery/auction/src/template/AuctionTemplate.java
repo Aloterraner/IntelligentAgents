@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import java.io.File;
+
 import logist.Measures;
 import logist.behavior.AuctionBehavior;
 import logist.agent.Agent;
@@ -18,6 +20,9 @@ import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
+import logist.LogistSettings;
+import logist.config.Parsers;
+
 
 /**
  * A very simple auction agent that assigns all tasks to its first vehicle and
@@ -37,6 +42,7 @@ public class AuctionTemplate implements AuctionBehavior {
 	private HashMap<Integer,ArrayList<Action>> old_plan;
 	private boolean first_it;
 	private Set<Task> won_tasks;
+	private long timeout_plan;
 	
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution,
@@ -50,6 +56,16 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.plan = new HashMap<Integer,ArrayList<Action>>();
 		this.first_it = true;
 		this.won_tasks = new HashSet<Task>();
+		// the plan method cannot execute more than timeout_plan milliseconds+
+		
+		LogistSettings ls = null;
+        try {
+            ls = Parsers.parseSettings("config" + File.separator + "settings_auction.xml");
+        }
+        catch (Exception exc) {
+            System.out.println("There was a problem loading the configuration file.");
+        }
+        timeout_plan = ls.get(LogistSettings.TimeoutKey.PLAN);
 		
 		long seed = -9019554669489983951L * currentCity.hashCode() * agent.id();
 		this.random = new Random(seed);
@@ -145,24 +161,38 @@ public class AuctionTemplate implements AuctionBehavior {
     	long time_needed = 0;
     	long wrap_up_time = (long)(timeout_plan * 0.005); 
     	
-    	// add new task to task set
-    	int last_time = plan.get(agent.vehicles().get(0)).get(plan.get(agent.vehicles().get(0)).size() - 1).getTime();
-    	plan.get(agent.vehicles().get(0)).add(new PickUpAction(new_task, last_time + 1, agent.vehicles().get(0)));
+    	// add task at the end of first vehicle's plan
+    	int last_time = plan.get(agent.vehicles().get(0)).get(plan.get(agent.vehicles().get(0)).size() - 1).getTime(); // get time of last action
+    	plan.get(agent.vehicles().get(0)).add(new PickUpAction(new_task, last_time + 1, agent.vehicles().get(0))); // append new PickUp action
+    	plan.get(agent.vehicles().get(0)).add(new DeliveryAction(new_task, last_time + 1, agent.vehicles().get(0))); // append new DeliveryAction
     	
     	print_plan(plan);
+    	double best_costs = CalculateCost(plan);
+    	HashMap<Integer,ArrayList<Action>> best_plan = copyPlan(plan);
     	
     	int counter = 0;
     	HashMap<Integer,ArrayList<Action>> plan_old;
     	HashSet<HashMap<Integer,ArrayList<Action>>> neighbors;
     	
+    	
     	// iterate
     	System.out.println("Start Iteration ... "); 
-    	while(counter < num_iterations) {
+    	while(counter < 200) {
     		neighbors = ChooseNeighbours(plan);
     		
     		plan = LocalChoice(neighbors, plan, p);
     		
-    		counter += 1;
+    		double cur_costs = CalculateCost(plan);
+        	
+        	if (cur_costs < best_costs) {
+        		best_costs = cur_costs;
+        		best_plan = copyPlan(plan);
+        		counter = 0;
+        	}
+        	else {
+        		counter += 1;
+        	}
+        	
     		time_needed = System.currentTimeMillis() - time_start;
     		
     		if (time_needed > timeout_plan - wrap_up_time) {
@@ -172,7 +202,7 @@ public class AuctionTemplate implements AuctionBehavior {
     	}
     	
     	System.out.println("Costs of the Plan: " + CalculateCost(plan)); 
-    	return plan
+    	return plan;
     }
     	
 
@@ -238,9 +268,9 @@ public class AuctionTemplate implements AuctionBehavior {
     			
     		}
     	
-    		plan.get(smallest).add(new PickUpAction(task,current_time[smallest], veh, 0.0));
+    		plan.get(smallest).add(new PickUpAction(task,current_time[smallest], veh));
     		current_time[smallest]++;    		
-    		plan.get(smallest).add(new DeliveryAction(task,current_time[smallest], veh, 0.0)); 
+    		plan.get(smallest).add(new DeliveryAction(task,current_time[smallest], veh)); 
     		current_time[smallest]++; 
     		
     		current_load[smallest] += task.weight;
