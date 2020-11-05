@@ -57,7 +57,10 @@ public class AuctionTemplate implements AuctionBehavior {
 	@Override
 	public void auctionResult(Task previous, int winner, Long[] bids) {
 		if (winner == agent.id()) {
-			currentCity = previous.deliveryCity;
+			old_plan = plan;  
+		}else {
+			plan = copyPlan(old_plan); 
+			
 		}
 	}
 	
@@ -70,12 +73,17 @@ public class AuctionTemplate implements AuctionBehavior {
 
 		if (this.first_it) {
 	    	cur_plan = SelectInitialSolution(won_tasks, topology, agent); 
+	    	
 	    	this.first_it = false;
 	    	
 		}
 		else {
 			List<Plan> plans = SLS_algorithm(won_tasks, topology, agent, 0.4);
 		}
+		
+		
+		
+		
 
 
 		if (vehicle.capacity() < task.weight)
@@ -126,7 +134,7 @@ public class AuctionTemplate implements AuctionBehavior {
 	}
 	
 	
-    void SLS_algorithm(Set<Task> tasks, Topology topology, Agent agent, double p) {
+    void SLS_algorithm(Set<Task> tasks, Topology topology, Agent agent, double p, Task new_Task) {
     	/*
     	 * Implementation of the SLS algorithm. Base call to compute the plan.
     	 * 
@@ -142,10 +150,19 @@ public class AuctionTemplate implements AuctionBehavior {
     	long wrap_up_time = (long)(timeout_plan * 0.005); 
     	
     	
+    	
+    	// Append the Task Naivly onto the Plan
+    	
+    	plan.get(agent.vehicles().get(0)).add(new PickUpAction());
+    	plan.get(agent.vehicles().get(0)).add(new DeliveryAction(new_Task, 0, vehicle, p));
+    	plan.get(agent.vehicles().get(0)).size(); 
+    	
+    	
+    	
     	print_plan(plan); 
     	
-    	System.out.println("Dev: Check if the Initial Plan is a fullfilling the constraints: " + verify_constraint(plan)); 
-    	System.out.println("Dev: The costs for the Initial Plan are as follows: " + CalculateCost(plan));
+    	
+    	
     	
     	int counter = 0;
     	HashMap<Integer,ArrayList<Action>> plan_old;
@@ -549,7 +566,7 @@ public class AuctionTemplate implements AuctionBehavior {
     			
     			time++;
     		}
-
+    			
     		// Constraint (4) and (7), Vehicle remains always below its maximum capacity
     		int current_load = 0;
     		for(Action action : plan.get(vehicle.id())) {
