@@ -626,4 +626,4 @@ public class AuctionTemplate implements AuctionBehavior {
     
 }
 
-}
+
