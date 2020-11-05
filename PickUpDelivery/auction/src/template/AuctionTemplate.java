@@ -34,6 +34,7 @@ public class AuctionTemplate implements AuctionBehavior {
 	private Vehicle vehicle;
 	private City currentCity;
 	private HashMap<Integer,ArrayList<Action>> plan;
+	private HashMap<Integer,ArrayList<Action>> old_plan;
 	private boolean first_it;
 	private Set<Task> won_tasks;
 	
@@ -58,23 +59,26 @@ public class AuctionTemplate implements AuctionBehavior {
 	public void auctionResult(Task previous, int winner, Long[] bids) {
 		if (winner == agent.id()) {
 			currentCity = previous.deliveryCity;
+			old_plan = plan;
+		}
+		else {
+			plan = copyPlan(old_plan);
 		}
 	}
 	
 	@Override
 	public Long askPrice(Task task) {
 		
-		HashMap<Integer,ArrayList<Action>> cur_plan = new HashMap<Integer,ArrayList<Action>>();
 		
 		won_tasks.add(task);
 
 		if (this.first_it) {
-	    	cur_plan = SelectInitialSolution(won_tasks, topology, agent); 
+	    	old_plan = SelectInitialSolution(won_tasks, topology, agent); 
 	    	this.first_it = false;
 	    	
 		}
 		else {
-			List<Plan> plans = SLS_algorithm(won_tasks, topology, agent, 0.4);
+			plan = SLS_algorithm(won_tasks, topology, agent, 0.4);
 		}
 
 
@@ -93,6 +97,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		return (long) Math.round(bid);
 	}
 
+	
 	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
 		
@@ -102,6 +107,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		
 	}
 
+	
 	private Plan naivePlan(Vehicle vehicle, Set<Task> tasks) {
 		City current = vehicle.getCurrentCity();
 		Plan plan = new Plan(current);
@@ -126,7 +132,7 @@ public class AuctionTemplate implements AuctionBehavior {
 	}
 	
 	
-    void SLS_algorithm(Set<Task> tasks, Topology topology, Agent agent, double p) {
+    private HashMap<Integer,ArrayList<Action>> SLS_algorithm(Set<Task> tasks, Topology topology, Agent agent, double p) {
     	/*
     	 * Implementation of the SLS algorithm. Base call to compute the plan.
     	 * 
@@ -143,9 +149,6 @@ public class AuctionTemplate implements AuctionBehavior {
     	
     	
     	print_plan(plan); 
-    	
-    	System.out.println("Dev: Check if the Initial Plan is a fullfilling the constraints: " + verify_constraint(plan)); 
-    	System.out.println("Dev: The costs for the Initial Plan are as follows: " + CalculateCost(plan));
     	
     	int counter = 0;
     	HashMap<Integer,ArrayList<Action>> plan_old;
@@ -168,7 +171,7 @@ public class AuctionTemplate implements AuctionBehavior {
     	}
     	
     	System.out.println("Costs of the Plan: " + CalculateCost(plan)); 
-    	
+    	return plan
     }
     	
 
@@ -634,4 +637,3 @@ public class AuctionTemplate implements AuctionBehavior {
     
 }
 
-}
