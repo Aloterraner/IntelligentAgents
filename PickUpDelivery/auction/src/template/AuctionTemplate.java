@@ -43,6 +43,7 @@ public class AuctionTemplate implements AuctionBehavior {
 	private boolean first_it;
 	private Set<Task> won_tasks;
 	private long timeout_plan;
+	private HashSet<Task> availableTasks; 
 	
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution,
@@ -56,6 +57,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.plan = new HashMap<Integer,ArrayList<Action>>();
 		this.first_it = true;
 		this.won_tasks = new HashSet<Task>();
+		this.availableTasks = new HashSet<Task>(); 
 		// the plan method cannot execute more than timeout_plan milliseconds+
 		
 		LogistSettings ls = null;
@@ -69,6 +71,8 @@ public class AuctionTemplate implements AuctionBehavior {
 		
 		long seed = -9019554669489983951L * currentCity.hashCode() * agent.id();
 		this.random = new Random(seed);
+		
+		System.out.println("\n \n CALLED SETUP \n \n");
 	}
 
 	@Override
@@ -78,39 +82,56 @@ public class AuctionTemplate implements AuctionBehavior {
 			this.first_it = false; 
 			won_tasks.add(previous); 
 			System.out.println("Won auction on Task " + previous);
-		}
-		else {
+		
+		}else {
+			System.out.println("Lost Bidding");
 			plan = copyPlan(old_plan);
+			
 		}
-		print_plan(plan);
+		
+		System.out.println("The other bids: ");
+		for (Long bid : bids) {
+			System.out.println("Bid:" + bid); 
+		}
+		
+		if(!this.first_it) {
+			System.out.println("The current plan after the Bidding Results:");
+			print_plan(plan);
+		}
+		System.out.println("Current Value of this.first_it: " + this.first_it);
 		System.out.println("Current Won Tasks " + won_tasks);
 	}
 	
 	@Override
 	public Long askPrice(Task task) {
 		double bid; 
-		System.out.println("The Task: " + task.id + " with PickupCity: " + task.pickupCity + " and DeliveryCity " + task.deliveryCity +  " and Reward " + task.reward); 
-		if (this.first_it) {
+		
+		availableTasks.add(task); 
+		System.out.println("\n\nThe Task: " + task.id + " with PickupCity: " + task.pickupCity + " and DeliveryCity " + task.deliveryCity +  " and Reward " + task.reward + "\n\n"); 
+		
+		System.out.println("BID FOR AGENT:" + agent.id() + "\n\n");
+		
+		if (this.first_it == true) {
 			System.out.println("Computing initial Solution");
 	    	plan = SelectInitialSolution(won_tasks, topology, agent, task); 
 	    	old_plan = copyPlan(plan);
 	    	
 		} else {
+			
 			System.out.println("Current Tasks: " + won_tasks); 
 			System.out.println("Extending existing plan"); 
 			plan = SLS_algorithm(won_tasks, topology, agent, 0.4, task);
 			
 		}
 		
-		
-		
 		if(this.first_it) {
 		System.out.println("Calculating Cost for old_plan");
-		bid = CalculateCost(old_plan); 
+		bid =  CalculateCost(old_plan); 
 		} else {
 		System.out.println("Calulating Cost for plan"); 
-		bid = CalculateCost(plan);
+		bid = CalculateCost(plan) - CalculateCost(old_plan);
 		}
+		System.out.println("Our Bid this round is:" + bid);
 		return (long) Math.round(bid);
 		
 	}
@@ -119,12 +140,21 @@ public class AuctionTemplate implements AuctionBehavior {
 	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
 		
-		//		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
 		
-		return parsePlan(this.plan);
+		
+		System.out.println("The Tasks we are assigned are:" + tasks);
+		System.out.println("The Final Plan is: ");
+		print_plan(plan);
+		
+		for(Task task : availableTasks) {
+			System.out.println("Available Task: " + task);
+		}
+		
+		return parsePlan(this.plan, tasks);
 		
 	}
 
+	
 	
 	private Plan naivePlan(Vehicle vehicle, Set<Task> tasks) {
 		City current = vehicle.getCurrentCity();
@@ -181,9 +211,8 @@ public class AuctionTemplate implements AuctionBehavior {
     	}
     	 
     	plan.get(agent.vehicles().get(0).id()).add(new PickUpAction(new_task, last_time + 1, agent.vehicles().get(0))); // append new PickUp action
-    	plan.get(agent.vehicles().get(0).id()).add(new DeliveryAction(new_task, last_time + 1, agent.vehicles().get(0))); // append new DeliveryAction
+    	plan.get(agent.vehicles().get(0).id()).add(new DeliveryAction(new_task, last_time + 2, agent.vehicles().get(0))); // append new DeliveryAction
     	System.out.println("Added task to the plan candidate");
-
     	print_plan(plan);
     	
     	double best_costs = CalculateCost(plan);
@@ -219,8 +248,8 @@ public class AuctionTemplate implements AuctionBehavior {
     		}
     	}
     	
-    	System.out.println("Costs of the Plan: " + CalculateCost(plan)); 
-    	return plan;
+    	System.out.println("Costs of the Plan: " + CalculateCost(best_plan)); 
+    	return best_plan;
     }
     	
 
@@ -241,14 +270,17 @@ public class AuctionTemplate implements AuctionBehavior {
 	     * @return:			initial (naive) plan as described above
     	 */
     	
+    	
+    	System.out.print("Init Solution Task:" + new_task);
+    	System.out.print("Init Solution Tasks:" + tasks);
     	// Generate a basic array in the length of the number of vehicles
-    	HashMap<Integer, ArrayList<Action>> plan = new HashMap<Integer,ArrayList<Action>>(); 
+    	HashMap<Integer, ArrayList<Action>> new_plan = new HashMap<Integer,ArrayList<Action>>(); 
     	int[] current_time = new int[agent.vehicles().size()];
     	double task_weights =  0; 
     	Vehicle veh = null; 
     	
     	for(Vehicle vehicle : agent.vehicles()) {
-    		plan.put(vehicle.id(), new ArrayList<Action>()); 
+    		new_plan.put(vehicle.id(), new ArrayList<Action>()); 
     	}
     	
     	// Check for each Tasks what the closest vehicle is 
@@ -270,19 +302,19 @@ public class AuctionTemplate implements AuctionBehavior {
     				
     	}
     	
-    	plan.get(smallest).add(new PickUpAction(new_task,current_time[smallest], veh));
+    	new_plan.get(smallest).add(new PickUpAction(new_task,current_time[smallest], veh));
     	current_time[smallest]++;    		
-    	plan.get(smallest).add(new DeliveryAction(new_task,current_time[smallest], veh)); 
+    	new_plan.get(smallest).add(new DeliveryAction(new_task,current_time[smallest], veh)); 
     	current_time[smallest]++; 
     		
     	System.out.println("I was here! ");
     	
     				
-    	return plan; 
+    	return new_plan; 
     }
    
      
-    private List<Plan> parsePlan(HashMap<Integer,ArrayList<Action>> intermediate_plans){
+    private List<Plan> parsePlan(HashMap<Integer,ArrayList<Action>> intermediate_plans, TaskSet tasks){
     	/*
     	 * Parsing our plan representation to make usable by the logist framework.
     	 * 
@@ -308,8 +340,15 @@ public class AuctionTemplate implements AuctionBehavior {
     					plan.appendMove(city);; 
     					
     				}
-    				plan.appendPickup(action.task);
-    				current = action.task.pickupCity; 
+    				for(Task task : tasks) {
+    					if(task.id == action.task.id) {
+    						plan.appendPickup(task);
+            				current = task.pickupCity; 
+            				break; 
+    					}
+    					
+    				}
+    				
     			}	
     				
     			if(action instanceof DeliveryAction) {
@@ -318,8 +357,16 @@ public class AuctionTemplate implements AuctionBehavior {
     					plan.appendMove(city);; 
     					
     				}
-    				plan.appendDelivery(action.task);
-    				current = action.task.deliveryCity; 
+    				
+    				for(Task task : tasks) {
+    					if(task.id == action.task.id) {
+    						plan.appendDelivery(task);
+    	    				current = task.deliveryCity;
+            				break; 
+    					}
+    					
+    				}
+    				 
     			}
 
     		}
@@ -327,7 +374,7 @@ public class AuctionTemplate implements AuctionBehavior {
 			result.add(plan); 
     	}
     	
-    	System.out.println("Time needed to Parse the Plan: " + (System.currentTimeMillis()- time_start));
+    	System.out.println("Time needed to Parse the Plan: " + (System.currentTimeMillis()- time_start) + " milliseconds");
     	return result; 
     }
     

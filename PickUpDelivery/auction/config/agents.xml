@@ -6,6 +6,11 @@
 	<!-- #### AUCTION AGENTS ### -->
 	<agent name="auction-random">
 		<set class-path="bin/"/>
+		<set class-name="template.AuctionTemplate_Naive"/>
+	</agent>
+
+	<agent name="auction-SSL">
+		<set class-path="bin/"/>
 		<set class-name="template.AuctionTemplate"/>
 	</agent>
 	
