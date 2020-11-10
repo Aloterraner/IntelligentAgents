@@ -939,7 +939,7 @@ public class AuctionTemplate implements AuctionBehavior {
     			}
 
     			opponent_bid = opponent_bid / Math.abs(Math.max(0, opponent_bids.size() - 4) - opponent_bids.size()); 
-    			bid = bid + ((1 / this.models.size()) * opponent_bid); // TODO: Check if all methods should have the same weighting factor
+    			bid = bid + ((1.0 / this.models.size()) * opponent_bid); // TODO: Check if all methods should have the same weighting factor
     		}
     		
     		else if (model == "Median") {
@@ -960,7 +960,6 @@ public class AuctionTemplate implements AuctionBehavior {
     			
     		}
     		
-    		System.out.println("Current bid after if else:" + bid);
     	}
     	
     	return bid;
