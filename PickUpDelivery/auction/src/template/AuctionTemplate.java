@@ -137,6 +137,10 @@ public class AuctionTemplate implements AuctionBehavior {
 			System.out.println("Bid: " + bid); 
 		}
 		
+		System.out.println("Our Plan:");
+		print_plan(plan);
+		System.out.println("Opponents Estimated Plan:");
+		print_plan(opponents_plan);
 
 		
 		
@@ -252,7 +256,7 @@ public class AuctionTemplate implements AuctionBehavior {
     	 * @return:			plan object
     	 */
     	
-    	plan = new HashMap<Integer,ArrayList<Action>>(); 
+    	HashMap<Integer, ArrayList<Action>> plan = new HashMap<Integer,ArrayList<Action>>(); 
     			
     	long time_start = System.currentTimeMillis();
     	long time_needed = 0;
