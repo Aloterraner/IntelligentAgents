@@ -14,6 +14,7 @@ import java.io.File;
 import logist.Measures;
 import logist.behavior.AuctionBehavior;
 import logist.agent.Agent;
+import logist.agent.AgentImpl;
 import logist.simulation.Vehicle;
 import logist.plan.Action.Pickup;
 import logist.plan.Plan;
@@ -89,16 +90,6 @@ public class AuctionTemplate implements AuctionBehavior {
             System.out.println("There was a problem loading the configuration file.");
         }
         timeout_plan = ls.get(LogistSettings.TimeoutKey.PLAN);
-		
-        try {
-        	
-        } 
-        catch (Exception exec) {
-        	
-        	
-        }
-        
-        
         
         // Select random Cities from the topology for which we simulate the Opponents SLS start position. 
         for(Vehicle veh : agent.vehicles()) {
@@ -110,7 +101,6 @@ public class AuctionTemplate implements AuctionBehavior {
         System.out.println("\nSelected Random Cities for the Opponent: " + opponent_city + "\n"); 
 		
 		// Read the opponents Vehicles starting City, or pick a random one
-		
 		
 		System.out.println("\n \n CALLED SETUP \n \n");
 	}
@@ -216,7 +206,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		
 		System.out.println("The Tasks the opponent won: " + opponents_tasks); 
 		
-		
+		print_plan(this.plan);
 		return parsePlan(this.plan, tasks);
 		
 	}
@@ -244,7 +234,6 @@ public class AuctionTemplate implements AuctionBehavior {
 			current = task.deliveryCity;
 			
 		}
-		
 		
 		return plan;
 	}
