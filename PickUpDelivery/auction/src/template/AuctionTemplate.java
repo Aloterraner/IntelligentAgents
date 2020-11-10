@@ -75,7 +75,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.probabilty = 0.4; 
 		this.sls_iteration = 1500; 
 		this.opponent_city = new ArrayList<City>(); 
-		this.models = Arrays.asList("SLS", "Average");
+		this.models = Arrays.asList("Average", "SLS");
 	
 		// the plan method cannot execute more than timeout_plan milliseconds+
 		
@@ -842,7 +842,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		return true;
 
     }
-    
+   
     
     private HashMap<Integer,ArrayList<Action>> copyPlan(HashMap<Integer,ArrayList<Action>> plan){
     	/*
@@ -884,15 +884,14 @@ public class AuctionTemplate implements AuctionBehavior {
    
     private double estimate_opponent_bid(Task new_task) {
 
-
-    	
-    	double bid = 0;
+    	double bid = 0.0;
     	double opponent_bid = 0.0;
     	
     	for (String model : this.models) {
+    		
     		if (model == "SLS") {
     			
-    			opponent_bid = 0.0;
+    			//opponent_bid = 0.0;
     			
     			if (opponents_tasks.size() == 0) {
     				opponents_plan = SelectInitialSolution(topology, agent, new_task, true);
@@ -910,36 +909,30 @@ public class AuctionTemplate implements AuctionBehavior {
     				opponent_bid = CalculateCost(opponents_plan, true) - CalculateCost(opponents_old_plan, true);
     			}
     			
-    			System.out.println("Expected Value after SSL: " + opponent_bid); 
-    			bid += (1 / this.models.size()) * opponent_bid; // TODO: Check if all methods should have the same weighting factor
-    			System.out.println("Value of bid after SLS: " + bid); 
-    			
+    			bid = bid + ((1.0 / this.models.size()) * opponent_bid); // TODO: Check if all methods should have the same weighting factor
+    
     		}
     		
     		else if (model == "Regression") {
     			opponent_bid = 42; // TODO
-    			bid += (1 / this.models.size()) * opponent_bid; // TODO: Check if all methods should have the same weighting factor
+    			bid = bid + ((1.0 / this.models.size()) * opponent_bid); // TODO: Check if all methods should have the same weighting factor
     		}
     		
     		else if (model == "Average") {
-    			opponent_bid = 0.0;
+    			//opponent_bid = 0.0;
     			
-    			System.out.println("Sublist: " + opponent_bids.subList(Math.max(0, opponent_bids.size() - 4), opponent_bids.size()));
+    			
     			for(long last_bid : opponent_bids.subList(Math.max(0, opponent_bids.size() - 4), opponent_bids.size())) {
-    				opponent_bid += last_bid;
+    				opponent_bid = opponent_bid + last_bid;
+    				
     			}
-    			
-    			System.out.println("Accumulated Values during Average: " + opponent_bid); 
-    			
+
     			opponent_bid = opponent_bid / Math.abs(Math.max(0, opponent_bids.size() - 4) - opponent_bids.size()); 
-    			bid += (1 / this.models.size()) * opponent_bid; // TODO: Check if all methods should have the same weighting factor
-    			
-    			System.out.println("Value of bid after Average: " + bid); 
-    			
+    			bid = bid + ((1.0 / this.models.size()) * opponent_bid); // TODO: Check if all methods should have the same weighting factor
     		}
     		
     		else if (model == "Median") {
-    			opponent_bid = 0.0;
+    			//opponent_bid = 0.0;
     			
     			int start = Math.max(0, opponent_bids.size() - 4);
     			int end = opponent_bids.size();
@@ -947,7 +940,8 @@ public class AuctionTemplate implements AuctionBehavior {
     			List<Long> window = opponent_bids.subList(start, end);
     			int median_idx = start + (int)(Math.floor(((end - 1) - start) * 0.5));
     			opponent_bid = opponent_bids.get(median_idx);
-    			bid += (1 / this.models.size()) * opponent_bid; // TODO: Check if all methods should have the same weighting factor
+    			bid = bid + ((1.0 / this.models.size()) * opponent_bid); // TODO: Check if all methods should have the same weighting factor
+    			
     		}
     		
     		else {
