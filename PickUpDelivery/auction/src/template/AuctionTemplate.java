@@ -90,6 +90,15 @@ public class AuctionTemplate implements AuctionBehavior {
         }
         timeout_plan = ls.get(LogistSettings.TimeoutKey.PLAN);
 		
+        try {
+        	
+        } 
+        catch (Exception exec) {
+        	
+        	
+        }
+        
+        
         
         // Select random Cities from the topology for which we simulate the Opponents SLS start position. 
         for(Vehicle veh : agent.vehicles()) {
@@ -883,11 +892,12 @@ public class AuctionTemplate implements AuctionBehavior {
 		return copy;
     }
     
-    
-    private long estimate_opponent_bid(Task new_task) {
-    	// double confidence = get_confidence();
+   
+    private double estimate_opponent_bid(Task new_task) {
+
+
     	
-    	long bid = 0;
+    	double bid = 0;
     	double opponent_bid = 0.0;
     	
     	for (String model : this.models) {
@@ -904,11 +914,14 @@ public class AuctionTemplate implements AuctionBehavior {
     			}
     			
     			if(opponents_tasks.size() == 0) {
+    				
     				opponent_bid = CalculateCost(opponents_old_plan, true); 
     			} else {
+    				
     				opponent_bid = CalculateCost(opponents_plan, true) - CalculateCost(opponents_old_plan, true);
     			}
-    			System.out.println("Accumulated Values during SSL: " + opponent_bid); 
+    			
+    			System.out.println("Expected Value after SSL: " + opponent_bid); 
     			bid += (1 / this.models.size()) * opponent_bid; // TODO: Check if all methods should have the same weighting factor
     			System.out.println("Value of bid after SLS: " + bid); 
     			
