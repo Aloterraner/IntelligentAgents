@@ -14,6 +14,7 @@ import logist.Measures;
 import logist.behavior.AuctionBehavior;
 import logist.agent.Agent;
 import logist.simulation.Vehicle;
+import logist.plan.Action.Pickup;
 import logist.plan.Plan;
 import logist.task.Task;
 import logist.task.TaskDistribution;
@@ -132,6 +133,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		bid = CalculateCost(plan) - CalculateCost(old_plan);
 		}
 		System.out.println("Our Bid this round is:" + bid);
+		System.out.println("Zero Margin Probability Estimate: " + marginal_offset(plan, topology, distribution)); 
 		return (long) Math.round(bid);
 		
 	}
@@ -224,7 +226,7 @@ public class AuctionTemplate implements AuctionBehavior {
     	
     	// iterate
     	System.out.println("Start Iteration ... "); 
-    	while(counter < 200) {
+    	while(counter < 2500) {
     		neighbors = ChooseNeighbours(plan);
     		
     		plan = LocalChoice(neighbors, plan, p);
@@ -611,6 +613,87 @@ public class AuctionTemplate implements AuctionBehavior {
     	
     }
     
+    
+    
+    private double marginal_offset(HashMap<Integer,ArrayList<Action>> plan, Topology topology, TaskDistribution td){
+		
+    	
+    	double total_prob = 0; 
+    	int num_non_nan = 0; 
+    	
+    	for(Vehicle veh : agent.vehicles()) {
+    	
+    		double prob = 0; 
+    		City prev = veh.getCurrentCity();
+    		    			
+	    	ArrayList<City> following_cities = new ArrayList<City>(); 
+	    	following_cities.add(prev); 
+	    		
+	    	for( Action action : plan.get(veh.id())){
+	    			
+    			if (action instanceof PickUpAction) {
+    				
+    				for(City step : prev.pathTo(action.task.pickupCity)) {
+    					
+    					following_cities.add(step);  
+    					
+    				}
+    				prev = action.task.pickupCity; 
+    			}
+    			
+    			if (action instanceof DeliveryAction) {
+    				
+    				for(City step : prev.pathTo(action.task.deliveryCity)) {
+    					following_cities.add(step); 
+    				}
+    				
+    				prev = action.task.deliveryCity; 
+    				
+    			}
+    			
+    		}
+	    	System.out.println("Following Citites: " + following_cities);
+    		
+    		HashSet<City> i_cities = new HashSet<City>();   
+    		
+    		for (int i =  0; i < following_cities.size() - 1; i++) {
+    			
+    			
+    			HashSet<City> j_cities = new HashSet<City>(); 
+    			
+    			if(i_cities.contains(following_cities.get(i))){
+    				continue; 
+    				
+    			}else {
+    				i_cities.add(following_cities.get(i));
+    				for( int j = i + 1 ; j < following_cities.size(); j ++) {
+	    				
+	    				// Check if the City was already considered in a previous i step
+	    				if(!j_cities.contains(following_cities.get(j))){
+	    					prob += td.probability(following_cities.get(i),  following_cities.get(j)); 
+		    				j_cities.add(following_cities.get(j)); 
+	    				}
+	    			}
+    			
+    					
+    			}
+		
+    		}
+    		
+    		System.out.println("Vehicle Zero Margin Prob: " + prob/i_cities.size());   
+    		
+    		// Just ignore if Value is Zero, for a Vehicle
+    		if(i_cities.size() > 0) {
+    			total_prob += prob/i_cities.size(); 
+    			num_non_nan++; 
+    		}
+    		
+    	
+    	}
+    	
+    	return total_prob/num_non_nan;
+    	
+    }
     
     private boolean verify_constraint(HashMap<Integer,ArrayList<Action>> plan) {
     	/*

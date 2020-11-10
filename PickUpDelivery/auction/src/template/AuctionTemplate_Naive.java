@@ -22,7 +22,7 @@ import logist.topology.Topology.City;
  * 
  */
 @SuppressWarnings("unused")
-public class AuctionTemplate implements AuctionBehavior {
+public class AuctionTemplate_Naive implements AuctionBehavior {
 
 	private Topology topology;
 	private TaskDistribution distribution;
