@@ -882,10 +882,10 @@ public class AuctionTemplate implements AuctionBehavior {
     }
     
     
-    private long estimate_opponent_bid(Task new_task) {
+    private double estimate_opponent_bid(Task new_task) {
     	double confidence = get_confidence();
     	
-    	long bid = 0;
+    	double bid = 0;
     	double opponent_bid = 0.0;
     	
     	for (String model : this.models) {
