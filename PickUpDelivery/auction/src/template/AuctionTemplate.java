@@ -2,6 +2,7 @@ package template;
 
 //the list of imports
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -49,7 +50,7 @@ public class AuctionTemplate implements AuctionBehavior {
 	private ArrayList<Long> opponent_bids; 
 	private ArrayList<Long> estimated_opponent_bids; 
 	private int round_counter; 
-	
+	private List<String> models;
 	
 	private HashMap<Integer,ArrayList<Action>> opponents_plan;
 	private HashMap<Integer,ArrayList<Action>> opponents_old_plan;
@@ -72,6 +73,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.opponents_tasks = new HashSet<Task>(); 
 		this.opponent_bids = new ArrayList<Long>(); 
 		this.round_counter = 0; 
+		this.models = Arrays.asList("SLS", "Regression");
 		
 		// the plan method cannot execute more than timeout_plan milliseconds+
 		
@@ -197,7 +199,6 @@ public class AuctionTemplate implements AuctionBehavior {
 		
 	}
 
-	
 	
 	private Plan naivePlan(Vehicle vehicle, Set<Task> tasks) {
 		City current = vehicle.getCurrentCity();
@@ -652,7 +653,6 @@ public class AuctionTemplate implements AuctionBehavior {
     }
     
     
-    
     private double marginal_offset(HashMap<Integer,ArrayList<Action>> plan, Topology topology, TaskDistribution td){
 		
     	
@@ -835,6 +835,89 @@ public class AuctionTemplate implements AuctionBehavior {
     	}
     	
 		return copy;
+    }
+    
+    
+    private long estimate_opponent_bid(Task new_task) {
+    	double confidence = get_confidence();
+    	
+    	long bid = 0;
+    	double opponent_bid = 0.0;
+    	
+    	for (String model : this.models) {
+    		if (model == "SLS") {
+    			
+    			opponent_bid = 0.0;
+    			
+    			if (opponents_tasks.size() == 0) {
+    				opponents_plan = SelectInitialSolution(topology, agent, new_task);
+    				opponents_old_plan = copyPlan(opponents_plan);
+    			}
+    			else {
+    				opponents_plan = SLS_algorithm(topology, agent, new_task, opponents_old_plan);
+    			}
+    			
+    			if(opponents_tasks.size() == 0) {
+    				opponent_bid = CalculateCost(opponents_old_plan); 
+    			} else {
+    				opponent_bid = CalculateCost(opponents_plan) - CalculateCost(opponents_old_plan);
+    			}
+    			
+    			bid += (1 / this.models.size()) * opponent_bid; // TODO: Check if all methods should have the same weighting factor
+    			
+    		}
+    		
+    		else if (model == "Regression") {
+    			opponent_bid = 42; // TODO
+    			bid += (1 / this.models.size()) * opponent_bid; // TODO: Check if all methods should have the same weighting factor
+    		}
+    		
+    		else if (model == "Average") {
+    			opponent_bid = 0.0;
+    			
+    			for(long last_bid : opponent_bids.subList(Math.max(0, opponent_bids.size() - 4), opponent_bids.size())) {
+    				opponent_bid += last_bid;
+    			}
+    			
+    			opponent_bid = opponent_bid / Math.abs(Math.max(0, opponent_bids.size() - 4) - opponent_bids.size()); 
+    			bid += (1 / this.models.size()) * opponent_bid; // TODO: Check if all methods should have the same weighting factor
+    		}
+    		
+    		else if (model == "Median") {
+    			opponent_bid = 0.0;
+    			
+    			int start = Math.max(0, opponent_bids.size() - 4);
+    			int end = opponent_bids.size();
+    			
+    			List<Long> window = opponent_bids.subList(start, end);
+    			int median_idx = start + (int)(Math.floor(((end - 1) - start) * 0.5));
+    			opponent_bid = opponent_bids.get(median_idx);
+    			bid += (1 / this.models.size()) * opponent_bid; // TODO: Check if all methods should have the same weighting factor
+    		}
+    		
+    		else {
+    			System.out.println("Invalid bid estimation model: " + model);
+    			
+    		}
+    		
+    	}
+    	
+    	return bid;
+    	
+    }
+    
+    private double get_confidence() {
+    	
+    	double mean_error = 0;
+    	for(int i = 0; i < opponent_bids.size(); i++) {
+    		mean_error += Math.abs(opponent_bids.get(i) - estimated_opponent_bids.get(i));
+    	}
+    	
+    	mean_error = mean_error / opponent_bids.size();
+    	
+    	// the larger the mean_error, the smaller the confidence
+    	return 1 / mean_error;
+    	
     }
     
 }
