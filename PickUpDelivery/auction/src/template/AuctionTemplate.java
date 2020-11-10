@@ -35,12 +35,7 @@ public class AuctionTemplate implements AuctionBehavior {
 
 	private Topology topology;
 	private TaskDistribution distribution;
-	private Agent agent;
-	private Random random;
-	private Vehicle vehicle;
-	private City currentCity;
-	private HashMap<Integer,ArrayList<Action>> plan;
-	private HashMap<Integer,ArrayList<Action>> old_plan;
+	private Agent agent; 
 	private boolean first_it;
 	private Set<Task> won_tasks;
 	private long timeout_plan;
@@ -49,8 +44,12 @@ public class AuctionTemplate implements AuctionBehavior {
 	private ArrayList<Long> opponent_bids; 
 	private ArrayList<Long> estimated_opponent_bids; 
 	private int round_counter; 
+	private int sls_iteration; 
+	private double probabilty; 
 	
-	
+	private ArrayList<City> opponent_city; 
+	private HashMap<Integer,ArrayList<Action>> plan;
+	private HashMap<Integer,ArrayList<Action>> old_plan;
 	private HashMap<Integer,ArrayList<Action>> opponents_plan;
 	private HashMap<Integer,ArrayList<Action>> opponents_old_plan;
 	
@@ -63,8 +62,6 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.topology = topology;
 		this.distribution = distribution;
 		this.agent = agent;
-		this.vehicle = agent.vehicles().get(0);
-		this.currentCity = vehicle.homeCity();
 		this.plan = new HashMap<Integer,ArrayList<Action>>();
 		this.first_it = true;
 		this.won_tasks = new HashSet<Task>();
@@ -72,8 +69,13 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.opponents_tasks = new HashSet<Task>(); 
 		this.opponent_bids = new ArrayList<Long>(); 
 		this.round_counter = 0; 
-		
+		this.probabilty = 0.4; 
+		this.sls_iteration = 1500; 
+		this.opponent_city = new ArrayList<City>(); 
 		// the plan method cannot execute more than timeout_plan milliseconds+
+		
+		Random rnd;
+		rnd = new Random(); 
 		
 		LogistSettings ls = null;
         try {
@@ -84,8 +86,13 @@ public class AuctionTemplate implements AuctionBehavior {
         }
         timeout_plan = ls.get(LogistSettings.TimeoutKey.PLAN);
 		
-		long seed = -9019554669489983951L * currentCity.hashCode() * agent.id();
-		this.random = new Random(seed);
+        
+        // Select random Cities from the topology for which we simulate the Opponents SLS start position. 
+        for(Vehicle veh : agent.vehicles()) {
+        	
+			opponent_city.add(topology.randomCity(rnd)); 
+        	
+        }
 		
 		// Read the opponents Vehicles starting City, or pick a random one
 		
@@ -146,12 +153,12 @@ public class AuctionTemplate implements AuctionBehavior {
 		
 		if (this.won_tasks.size() == 0) {
 			
-	    	plan = SelectInitialSolution(won_tasks, topology, agent, task); 
+	    	plan = SelectInitialSolution(topology, agent, task, false); 
 	    	old_plan = copyPlan(plan);
 	    	
 		} else {
 			
-			plan = SLS_algorithm(won_tasks, topology, agent, 0.4, task, old_plan);
+			plan = SLS_algorithm(topology, agent, task, old_plan, false);
 			
 		}
 
@@ -160,11 +167,11 @@ public class AuctionTemplate implements AuctionBehavior {
 		
 		if(this.won_tasks.size() == 0) {
 			
-		bid =  CalculateCost(old_plan); 
+		bid =  CalculateCost(old_plan, false); 
 		
 		} else {
 
-		bid = CalculateCost(plan) - CalculateCost(old_plan);
+		bid = CalculateCost(plan, false) - CalculateCost(old_plan, false);
 		
 		}
 		
@@ -227,8 +234,9 @@ public class AuctionTemplate implements AuctionBehavior {
 	}
 	
 	
-    private HashMap<Integer,ArrayList<Action>> SLS_algorithm(Set<Task> tasks, Topology topology, Agent agent, double p, Task new_task, HashMap<Integer,ArrayList<Action>> passed_plan) {
-   	/*
+    private HashMap<Integer,ArrayList<Action>> SLS_algorithm(Topology topology, Agent agent, Task new_task, HashMap<Integer,ArrayList<Action>> passed_plan, boolean opponent) {
+   	    
+    	/*
     	 * Implementation of the SLS algorithm. Base call to compute the plan.
     	 * 
     	 * @param tasks:	task set to be processed
@@ -238,6 +246,7 @@ public class AuctionTemplate implements AuctionBehavior {
     	 * @param task:		new task which we bid for
     	 * @return:			plan object
     	 */
+    	
     	plan = new HashMap<Integer,ArrayList<Action>>(); 
     			
     	long time_start = System.currentTimeMillis();
@@ -247,6 +256,7 @@ public class AuctionTemplate implements AuctionBehavior {
     	plan = copyPlan(passed_plan); 
     		
     	// get time of last action
+    	
     	int last_time;
     	if(plan.get(agent.vehicles().get(0).id()).size() == 0) {
     		last_time = -1;
@@ -257,34 +267,38 @@ public class AuctionTemplate implements AuctionBehavior {
     	plan.get(agent.vehicles().get(0).id()).add(new PickUpAction(new_task, last_time + 1, agent.vehicles().get(0))); // append new PickUp action
     	plan.get(agent.vehicles().get(0).id()).add(new DeliveryAction(new_task, last_time + 2, agent.vehicles().get(0))); // append new DeliveryAction
     	
-    	double best_costs = CalculateCost(plan);
+    	double best_costs = CalculateCost(plan, opponent);
     	HashMap<Integer,ArrayList<Action>> best_plan = copyPlan(plan);   	
     	int counter = 0;
     	HashMap<Integer,ArrayList<Action>> plan_old;
     	HashSet<HashMap<Integer,ArrayList<Action>>> neighbors;
     	
     	
-    	// iterate
-    	while(counter < 2500) {
+    	// iterate 
+    	
+    	while(counter < sls_iteration) {
     		neighbors = ChooseNeighbours(plan);
     		
-    		plan = LocalChoice(neighbors, plan, p);
+    		plan = LocalChoice(neighbors, plan, probabilty, opponent);
     		
-    		double cur_costs = CalculateCost(plan);
+    		double cur_costs = CalculateCost(plan, opponent);
         	
         	if (cur_costs < best_costs) {
         		best_costs = cur_costs;
         		best_plan = copyPlan(plan);
         		counter = 0;
         	}
+        	
         	else {
+        		
         		counter += 1;
+        		
         	}
         	
     		time_needed = System.currentTimeMillis() - time_start;
     		
     		if (time_needed > timeout_plan - wrap_up_time) {
-    			System.out.println("TimeOut Reached, Parsing Plan!");
+    			System.out.println("Time out reached");
     			break; 
     		}
     	}
@@ -293,7 +307,8 @@ public class AuctionTemplate implements AuctionBehavior {
     }
     	
 
-    private HashMap<Integer,ArrayList<Action>> SelectInitialSolution(Set<Task> tasks, Topology topology, Agent agent, Task new_task){
+    private HashMap<Integer,ArrayList<Action>> SelectInitialSolution(Topology topology, Agent agent, Task new_task, boolean opponent){
+    	
     	/*
     	 * Compute an initial plan based on distributing each task to the nearest vehicle that has some capacity left. 
     	 * HashMap Mapping Vehicle to Actions for the Vehicle
@@ -311,8 +326,6 @@ public class AuctionTemplate implements AuctionBehavior {
     	 */
     	
     	
-    	System.out.print("Init Solution Task:" + new_task);
-    	System.out.print("Init Solution Tasks:" + tasks);
     	// Generate a basic array in the length of the number of vehicles
     	HashMap<Integer, ArrayList<Action>> new_plan = new HashMap<Integer,ArrayList<Action>>(); 
     	int[] current_time = new int[agent.vehicles().size()];
@@ -331,14 +344,31 @@ public class AuctionTemplate implements AuctionBehavior {
     	for(Vehicle vehicle : agent.vehicles()) {
     			
     				
-    		// How close it is
-    		if(new_task.pickupCity.distanceTo(vehicle.getCurrentCity()) < min_distance && vehicle.capacity() > new_task.weight) {
-    					
-    			min_distance = new_task.pickupCity.distanceTo(vehicle.getCurrentCity()); 
-    			smallest = vehicle.id(); 
-    			veh = vehicle;
-    					
+    		// Compute how close the different vehicles are to the task
+    		
+    		if(opponent) {
+    			
+    			if(new_task.pickupCity.distanceTo(opponent_city.get(vehicle.id())) < min_distance && vehicle.capacity() > new_task.weight) {
+					
+        			min_distance = new_task.pickupCity.distanceTo(vehicle.getCurrentCity()); 
+        			smallest = vehicle.id(); 
+        			veh = vehicle;
+        					
+        		}
+    			
+    			
+    			
+    		}else {
+    			
+    			if(new_task.pickupCity.distanceTo(vehicle.getCurrentCity()) < min_distance && vehicle.capacity() > new_task.weight) {
+					
+        			min_distance = new_task.pickupCity.distanceTo(vehicle.getCurrentCity()); 
+        			smallest = vehicle.id(); 
+        			veh = vehicle;
+        					
+        		}
     		}
+    		
     				
     	}
     	
@@ -349,7 +379,6 @@ public class AuctionTemplate implements AuctionBehavior {
     		
     	System.out.println("I was here! ");
     	
-    				
     	return new_plan; 
     }
    
@@ -432,7 +461,6 @@ public class AuctionTemplate implements AuctionBehavior {
     	HashSet<HashMap<Integer,ArrayList<Action>>> neighbors = new HashSet<HashMap<Integer,ArrayList<Action>>>();
     	HashMap<Integer,ArrayList<Action>> new_plan;
 
-    	
     	Random rand = new Random();
     	
     	int v_i = 0;
@@ -460,6 +488,7 @@ public class AuctionTemplate implements AuctionBehavior {
     	int vehicle = rand.nextInt(this.agent.vehicles().size());
     	Action temp;
     	
+    	
     	for (int idx1=0; idx1 < plan.get(vehicle).size() - 1; idx1 ++) {
     		for (int idx2=idx1+1; idx2 < plan.get(vehicle).size(); idx2 ++) {
 
@@ -482,7 +511,7 @@ public class AuctionTemplate implements AuctionBehavior {
     }
 
 
-    private double CalculateCost(HashMap<Integer,ArrayList<Action>> plan) {
+    private double CalculateCost(HashMap<Integer,ArrayList<Action>> plan, boolean opponent) {
     	/*
     	 * Computes the costs of the current plan.
     	 * 
@@ -493,8 +522,19 @@ public class AuctionTemplate implements AuctionBehavior {
     	
     	for(Vehicle vehicle : this.agent.vehicles()) {
     		
+    		
+    		City prev; 
+    		
+    		// If its the opponent start at the randomly selected location
+    		if(opponent) {
+    			
+    			prev = opponent_city.get(vehicle.id()); 
+        		
+    		}else {
+    			prev = vehicle.getCurrentCity(); 
+    		}
+    		
     		// Calculate the cost of all moves made in the plan
-    		City prev = vehicle.getCurrentCity(); 
     		
     		for(Action action : plan.get(vehicle.id())){
     			
@@ -604,7 +644,7 @@ public class AuctionTemplate implements AuctionBehavior {
     }
     
     
-    private HashMap<Integer,ArrayList<Action>> LocalChoice(HashSet<HashMap<Integer,ArrayList<Action>>> set, HashMap<Integer, ArrayList<Action>> current_plan, double p) {
+    private HashMap<Integer,ArrayList<Action>> LocalChoice(HashSet<HashMap<Integer,ArrayList<Action>>> set, HashMap<Integer, ArrayList<Action>> current_plan, double p, boolean opponent) {
     	/*
     	 * Selects the optimal plan in accordance with the lowest cost. Optimal plan is returned with probability p
     	 * to escape local optima.
@@ -618,7 +658,7 @@ public class AuctionTemplate implements AuctionBehavior {
     	double min_costs = Double.POSITIVE_INFINITY;
     	HashMap<Integer,ArrayList<Action>>  best_plan = null;
     	for (HashMap<Integer,ArrayList<Action>> plan : set) {
-    		double cur_costs = CalculateCost(plan);
+    		double cur_costs = CalculateCost(plan, opponent);
     		if (cur_costs < min_costs) {
     			min_costs = cur_costs;
     			best_plan = plan;
