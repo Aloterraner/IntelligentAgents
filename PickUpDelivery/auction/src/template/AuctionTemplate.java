@@ -74,7 +74,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.probabilty = 0.4; 
 		this.sls_iteration = 1500; 
 		this.opponent_city = new ArrayList<City>(); 
-		this.models = Arrays.asList("SLS", "Regression");
+		this.models = Arrays.asList("SLS", "Average");
 	
 		// the plan method cannot execute more than timeout_plan milliseconds+
 		
@@ -110,12 +110,14 @@ public class AuctionTemplate implements AuctionBehavior {
 	public void auctionResult(Task previous, int winner, Long[] bids) {
 
 		if (winner == agent.id()) {
+			
 			old_plan = plan;
 			this.first_it = false; 
 			won_tasks.add(previous); 
 			System.out.println("Won auction on Task " + previous);
 		
 		}else{
+			
 			
 			opponents_tasks.add(previous); 
 			System.out.println("Lost Bidding");
@@ -183,7 +185,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		
 		System.out.println("Our Bid this round is: " + bid);
 		System.out.println("Zero Margin Probability Estimate: " + marginal_offset(plan, topology, distribution)); 
-		
+		System.out.println("Estimated Opponent Bid: " + estimate_opponent_bid(task));  
 		
 		
 		// Estimate the costs for the opponent
@@ -883,7 +885,7 @@ public class AuctionTemplate implements AuctionBehavior {
     
     
     private long estimate_opponent_bid(Task new_task) {
-    	double confidence = get_confidence();
+    	// double confidence = get_confidence();
     	
     	long bid = 0;
     	double opponent_bid = 0.0;
@@ -906,8 +908,9 @@ public class AuctionTemplate implements AuctionBehavior {
     			} else {
     				opponent_bid = CalculateCost(opponents_plan, true) - CalculateCost(opponents_old_plan, true);
     			}
-    			
+    			System.out.println("Accumulated Values during SSL: " + opponent_bid); 
     			bid += (1 / this.models.size()) * opponent_bid; // TODO: Check if all methods should have the same weighting factor
+    			System.out.println("Value of bid after SLS: " + bid); 
     			
     		}
     		
@@ -919,12 +922,18 @@ public class AuctionTemplate implements AuctionBehavior {
     		else if (model == "Average") {
     			opponent_bid = 0.0;
     			
+    			System.out.println("Sublist: " + opponent_bids.subList(Math.max(0, opponent_bids.size() - 4), opponent_bids.size()));
     			for(long last_bid : opponent_bids.subList(Math.max(0, opponent_bids.size() - 4), opponent_bids.size())) {
     				opponent_bid += last_bid;
     			}
     			
+    			System.out.println("Accumulated Values during Average: " + opponent_bid); 
+    			
     			opponent_bid = opponent_bid / Math.abs(Math.max(0, opponent_bids.size() - 4) - opponent_bids.size()); 
     			bid += (1 / this.models.size()) * opponent_bid; // TODO: Check if all methods should have the same weighting factor
+    			
+    			System.out.println("Value of bid after Average: " + bid); 
+    			
     		}
     		
     		else if (model == "Median") {
