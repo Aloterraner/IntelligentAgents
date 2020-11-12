@@ -47,7 +47,7 @@ public class AuctionTemplate implements AuctionBehavior {
 	private HashSet<Task> availableTasks; 
 	private HashSet<Task> opponents_tasks; 
 	private ArrayList<Long> opponent_bids; 
-	private ArrayList<Long> estimated_opponent_bids; 
+	private HashMap<String, ArrayList<Long>> estimated_opponent_bids; 
 	private int round_counter; 
 	private int sls_iteration; 
 	private double probabilty; 
@@ -58,7 +58,7 @@ public class AuctionTemplate implements AuctionBehavior {
 	private List<String> models;
 	private HashMap<Integer,ArrayList<Action>> opponents_plan;
 	private HashMap<Integer,ArrayList<Action>> opponents_old_plan;
-	
+	private HashMap<String, Double> weights;
 	
 	
 	@Override
@@ -74,13 +74,21 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.availableTasks = new HashSet<Task>(); 
 		this.opponents_tasks = new HashSet<Task>(); 
 		this.opponent_bids = new ArrayList<Long>(); 
-		this.estimated_opponent_bids = new ArrayList<Long>();
+		this.estimated_opponent_bids = new HashMap<String, ArrayList<Long>>();
 		this.round_counter = 0; 
 		this.probabilty = 0.4; 
 		this.sls_iteration = 1500; 
 		this.opponent_city = new ArrayList<City>(); 
 		this.models = Arrays.asList("Regression", "Median", "SLS", "Average");
-	
+		this.weights = new HashMap<String, Double>();
+		
+		for (String model: this.models) {
+			// initialize weights uniformly
+			this.weights.put(model, (1.0 / this.models.size()));
+			this.estimated_opponent_bids.put(model, new ArrayList<Long>());
+		}
+		
+		
 		// the plan method cannot execute more than timeout_plan milliseconds+
 		
 		Random rnd;
@@ -149,7 +157,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		System.out.println("Opponents Estimated Plan:");
 		print_plan(opponents_plan);
 
-		
+		weight_update();
 		
 
 	}
@@ -193,16 +201,14 @@ public class AuctionTemplate implements AuctionBehavior {
 		long opp_bid_estimate = 0l;
 		if (round_counter > 1) {
 			opp_bid_estimate = estimate_opponent_bid(task);
-			estimated_opponent_bids.add(opp_bid_estimate);
-			double cur_conf = get_confidence();
-			opp_bid_estimate -= cur_conf;
 				
-			System.out.println("Estimated Opponent Bid: " + opp_bid_estimate + ". Confidence: " + cur_conf);  
+			System.out.println("Estimated Opponent Bid: " + opp_bid_estimate );  
 		}
 		else {
 			opponents_plan = SelectInitialSolution(topology, agent, task, true);
 			opponents_old_plan = copyPlan(opponents_plan);
 		}
+		
 
 		if (bid <= 0) {
 			bid = 0.99 * opp_bid_estimate;
@@ -903,7 +909,6 @@ public class AuctionTemplate implements AuctionBehavior {
     			}
     			
     			System.out.println("SLS estimate: " + opponent_bid);
-    			bid = bid + (0.7 * opponent_bid); // TODO: Check if all methods should have the same weighting factor
     
     		}
     		
@@ -937,7 +942,6 @@ public class AuctionTemplate implements AuctionBehavior {
     			
     			opponent_bid = slope * (Math.min(size, opponent_bids.size()) + 1) + offset;
     			System.out.println("Regression estimate: " + opponent_bid);
-    			bid = bid + (0.1 * opponent_bid); // TODO: Check if all methods should have the same weighting factor
     		}
     		
     		else if (model == "Average") {
@@ -950,7 +954,6 @@ public class AuctionTemplate implements AuctionBehavior {
 
     			opponent_bid = opponent_bid / Math.abs(Math.max(0, opponent_bids.size() - size) - opponent_bids.size()); 
     			System.out.println("Average estimate: " + opponent_bid);
-    			bid = bid + (0.1 * opponent_bid); // TODO: Check if all methods should have the same weighting factor
     		}
     		
     		else if (model == "Median") {
@@ -972,11 +975,8 @@ public class AuctionTemplate implements AuctionBehavior {
     				median_idx = 0;
     				opponent_bid = 0;
     			}
-   
     			
     			System.out.println("Median estimate: " + opponent_bid);
-    			bid = bid + (0.1 * opponent_bid); // TODO: Check if all methods should have the same weighting factor
-    			
     		}
     		
     		else {
@@ -984,13 +984,42 @@ public class AuctionTemplate implements AuctionBehavior {
     			
     		}
     		
+    		estimated_opponent_bids.get(model).add((long)Math.floor(opponent_bid));
+    		
     	}
     	
+    	// Compute weighted average based on the last estimations and the weights
+    	for (String model: this.models) {
+    		bid += this.weights.get(model) * this.estimated_opponent_bids.get(model).get(this.estimated_opponent_bids.get(model).size() - 1);
+    	}
+ 
     	return (long)Math.floor(bid);
     	
     }
     
-    private double get_confidence() {
+    
+    private void weight_update() {
+    	
+    	if (this.round_counter > 1) {
+    	
+	    	double MSE = 0;
+	    	
+	    	for (String model: this.models) {
+	    		for (int i = 0; i < this.estimated_opponent_bids.get(model).size(); i++) {
+	    			MSE += Math.pow(this.estimated_opponent_bids.get(model).get(i) - this.opponent_bids.get(i + 1), 2);
+	    		}
+	    		// MSE of current model
+	    		MSE /= this.estimated_opponent_bids.get(model).size();
+	    		// TODO: formulate update rule based on MSE
+	    		//this.weights.get(model) =  
+	    	}
+    	}
+    	else {
+    		
+    	}
+    	
+    }
+   /* private double get_confidence() {
     	
     	double mean_error = 0;
     	int size = 10;
@@ -1006,6 +1035,6 @@ public class AuctionTemplate implements AuctionBehavior {
     	// the larger the mean_error, the smaller the confidence
     	//return 1.0 / mean_error;
     	
-    }
+    }*/
     
 }
