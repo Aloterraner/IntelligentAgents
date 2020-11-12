@@ -79,7 +79,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.probabilty = 0.4; 
 		this.sls_iteration = 1500; 
 		this.opponent_city = new ArrayList<City>(); 
-		this.models = Arrays.asList("Regression", "Median", "SLS");
+		this.models = Arrays.asList("Regression", "Median", "SLS", "Average");
 	
 		// the plan method cannot execute more than timeout_plan milliseconds+
 		
@@ -156,16 +156,13 @@ public class AuctionTemplate implements AuctionBehavior {
 		
 		double bid; 
 		availableTasks.add(task); 
-		
-		
+
 		round_counter++; 
 
 		System.out.println("\n\nThe Task: " + task.id + " with PickupCity: " + task.pickupCity + " and DeliveryCity " + task.deliveryCity +  " and Reward " + task.reward + "\n\n"); 
 		
 		System.out.println("Round: " + round_counter + " BID FOR AGENT:" + agent.id() + "\n\n");
-		
-		
-		
+
 		if (this.won_tasks.size() == 0) {
 			
 	    	plan = SelectInitialSolution(topology, agent, task, false); 
@@ -177,9 +174,6 @@ public class AuctionTemplate implements AuctionBehavior {
 			
 		}
 
-			
-			
-		
 		if(this.won_tasks.size() == 0) {
 			
 		bid =  CalculateCost(old_plan, false); 
@@ -193,17 +187,29 @@ public class AuctionTemplate implements AuctionBehavior {
 		System.out.println("Our Bid this round is: " + bid);
 		System.out.println("Zero Margin Probability Estimate: " + marginal_offset(plan, topology, distribution)); 
 		
-		
-		long opp_bid_estimate = estimate_opponent_bid(task);
-		estimated_opponent_bids.add(opp_bid_estimate);
-		double cur_conf = get_confidence();
-		opp_bid_estimate *= cur_conf;
-			
-		System.out.println("Estimated Opponent Bid: " + estimate_opponent_bid(task) + ". Confidence: " + cur_conf);  
-			
-		// Estimate the costs for the opponent
+		long opp_bid_estimate = 0l;
+		if (round_counter > 1) {
+			opp_bid_estimate = estimate_opponent_bid(task);
+			estimated_opponent_bids.add(opp_bid_estimate);
+			double cur_conf = get_confidence();
+			opp_bid_estimate -= cur_conf;
+				
+			System.out.println("Estimated Opponent Bid: " + opp_bid_estimate + ". Confidence: " + cur_conf);  
+		}
+		else {
+			opponents_plan = SelectInitialSolution(topology, agent, task, true);
+			opponents_old_plan = copyPlan(opponents_plan);
+		}
 
+		if (bid <= 0) {
+			bid = 0.99 * opp_bid_estimate;
+		}
+		else {
+			bid = bid * (1.7 - marginal_offset(plan, topology, distribution));
+		}
 	
+		System.out.println("Our Bid this round is: " + bid);
+		// System.out.println("Zero Margin Probability Estimate: " + marginal_offset(plan, topology, distribution)); 
 		
 		return (long) Math.round(bid);
 		
@@ -925,7 +931,7 @@ public class AuctionTemplate implements AuctionBehavior {
     			}
     			
     			System.out.println("SLS estimate: " + opponent_bid);
-    			bid = bid + ((1.0 / this.models.size()) * opponent_bid); // TODO: Check if all methods should have the same weighting factor
+    			bid = bid + (0.7 * opponent_bid); // TODO: Check if all methods should have the same weighting factor
     
     		}
     		
@@ -959,7 +965,7 @@ public class AuctionTemplate implements AuctionBehavior {
     			
     			opponent_bid = slope * (Math.min(size, opponent_bids.size()) + 1) + offset;
     			System.out.println("Regression estimate: " + opponent_bid);
-    			bid = bid + ((1.0 / this.models.size()) * opponent_bid); // TODO: Check if all methods should have the same weighting factor
+    			bid = bid + (0.1 * opponent_bid); // TODO: Check if all methods should have the same weighting factor
     		}
     		
     		else if (model == "Average") {
@@ -972,7 +978,7 @@ public class AuctionTemplate implements AuctionBehavior {
 
     			opponent_bid = opponent_bid / Math.abs(Math.max(0, opponent_bids.size() - size) - opponent_bids.size()); 
     			System.out.println("Average estimate: " + opponent_bid);
-    			bid = bid + ((1.0 / this.models.size()) * opponent_bid); // TODO: Check if all methods should have the same weighting factor
+    			bid = bid + (0.1 * opponent_bid); // TODO: Check if all methods should have the same weighting factor
     		}
     		
     		else if (model == "Median") {
@@ -992,12 +998,12 @@ public class AuctionTemplate implements AuctionBehavior {
     			else {
     				 
     				median_idx = 0;
-    				opponent_bid = opponent_bids.get(median_idx);
+    				opponent_bid = 0;
     			}
    
     			
     			System.out.println("Median estimate: " + opponent_bid);
-    			bid = bid + ((1.0 / this.models.size()) * opponent_bid); // TODO: Check if all methods should have the same weighting factor
+    			bid = bid + (0.1 * opponent_bid); // TODO: Check if all methods should have the same weighting factor
     			
     		}
     		
@@ -1015,14 +1021,18 @@ public class AuctionTemplate implements AuctionBehavior {
     private double get_confidence() {
     	
     	double mean_error = 0;
-    	for(int i = 0; i < opponent_bids.size(); i++) {
-    		mean_error += Math.abs(opponent_bids.get(i) - estimated_opponent_bids.get(i));
+    	int size = 10;
+    	for(int i = Math.max(0, opponent_bids.size() - size); i < opponent_bids.size(); i++) {
+    		mean_error += opponent_bids.get(i) - estimated_opponent_bids.get(i);
     	}
     	
-    	mean_error = mean_error / opponent_bids.size();
+    	mean_error = mean_error / Math.min(size, opponent_bids.size());
+    	return mean_error;
+    	
+    	// double error = opponent_bids.get(opponent_bids.size() - 1) - estimated_opponent_bids.get(estimated_opponent_bids.size() - 1);
     	
     	// the larger the mean_error, the smaller the confidence
-    	return 1 / mean_error;
+    	//return 1.0 / mean_error;
     	
     }
     
