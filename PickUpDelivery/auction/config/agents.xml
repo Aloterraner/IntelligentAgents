@@ -9,9 +9,14 @@
 		<set class-name="template.AuctionTemplate_Naive"/>
 	</agent>
 
-	<agent name="auction-SSL">
+	<agent name="auction-SLS">
 		<set class-path="bin/"/>
 		<set class-name="template.AuctionTemplate"/>
+	</agent>
+
+	<agent name="auction-SLS-Naive">
+		<set class-path="bin/"/>
+		<set class-name="template.AuctionTemplate_SLS"/>
 	</agent>
 	
 </agents>
