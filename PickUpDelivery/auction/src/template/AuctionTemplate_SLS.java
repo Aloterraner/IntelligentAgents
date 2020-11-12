@@ -44,10 +44,7 @@ public class AuctionTemplate_SLS implements AuctionBehavior {
 	private boolean first_it;
 	private Set<Task> won_tasks;
 	private long timeout_plan;
-	private HashSet<Task> availableTasks; 
-	private HashSet<Task> opponents_tasks; 
-	private ArrayList<Long> opponent_bids; 
-	private ArrayList<Long> estimated_opponent_bids; 
+	private HashSet<Task> availableTasks;  
 	private int round_counter; 
 	private int sls_iteration; 
 	private double probabilty; 
@@ -67,9 +64,6 @@ public class AuctionTemplate_SLS implements AuctionBehavior {
 		this.first_it = true;
 		this.won_tasks = new HashSet<Task>();
 		this.availableTasks = new HashSet<Task>(); 
-		this.opponents_tasks = new HashSet<Task>(); 
-		this.opponent_bids = new ArrayList<Long>(); 
-		this.estimated_opponent_bids = new ArrayList<Long>();
 		this.round_counter = 0; 
 		this.probabilty = 0.4; 
 		this.sls_iteration = 1500; 
@@ -95,29 +89,22 @@ public class AuctionTemplate_SLS implements AuctionBehavior {
 
 	@Override
 	public void auctionResult(Task previous, int winner, Long[] bids) {
-
+		
 		if (winner == agent.id()) {
 			
 			old_plan = plan;
 			this.first_it = false; 
 			won_tasks.add(previous); 
 			System.out.println("Won auction on Task " + previous);
+			System.out.println("Won Task for Agent: " + agent.id() + "  " + won_tasks);
 		
 		}else{
 			
-			
-			opponents_tasks.add(previous); 
+		
 			System.out.println("Lost Bidding");
 			plan = copyPlan(old_plan);
 		}
 		
-		
-		// Check for a nicer way to do this
-		if(agent.id() == 0) {
-			opponent_bids.add(bids[1]); 
-		}else {
-			opponent_bids.add(bids[0]); 
-		}
 		
 		
 		System.out.println("The bids: ");
@@ -137,9 +124,6 @@ public class AuctionTemplate_SLS implements AuctionBehavior {
 
 		round_counter++; 
 
-		System.out.println("\n\nThe Task: " + task.id + " with PickupCity: " + task.pickupCity + " and DeliveryCity " + task.deliveryCity +  " and Reward " + task.reward + "\n\n"); 
-		
-		System.out.println("Round: " + round_counter + " BID FOR AGENT:" + agent.id() + "\n\n");
 
 		if (this.won_tasks.size() == 0) {
 			
@@ -162,7 +146,14 @@ public class AuctionTemplate_SLS implements AuctionBehavior {
 		
 		}
 		
-		System.out.println("Our Bid this round is: " + bid);
+		System.out.println("\n\nRound: " + round_counter + " BID FOR AGENT: " + agent.id());
+		System.out.println("Bid for Agent: " + agent.id() + " this round is: " + bid);
+		
+		
+		// If we have a Zero Margin just bid 100.0
+		if (bid < 0.0 ) {
+			bid = 100.0; 
+		}
 		return (long) Math.round(bid);
 		
 	}
@@ -170,46 +161,14 @@ public class AuctionTemplate_SLS implements AuctionBehavior {
 	
 	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-		
-		for(Long bid : opponent_bids){ 
-			
-			System.out.println("The opponents bids: " + bid); 
-			
-		}
-		
-		System.out.println("The Tasks the opponent won: " + opponents_tasks); 
-		
+	  	System.out.println("\n\nPARSING PLAN FOR AGENT: " + agent.id()); 
+	  	
+		System.out.println("The Final Plan");
 		print_plan(this.plan);
 		return parsePlan(this.plan, tasks);
 		
 	}
 
-	
-	private Plan naivePlan(Vehicle vehicle, Set<Task> tasks) {
-		City current = vehicle.getCurrentCity();
-		Plan plan = new Plan(current);
-
-		for (Task task : tasks) {
-			
-			// move: current city => pickup location
-			for (City city : current.pathTo(task.pickupCity))
-				plan.appendMove(city);
-
-			plan.appendPickup(task);
-
-			// move: pickup location => delivery location
-			for (City city : task.path())
-				plan.appendMove(city);
-
-			plan.appendDelivery(task);
-
-			// set current city
-			current = task.deliveryCity;
-			
-		}
-		
-		return plan;
-	}
 	
 	
     private HashMap<Integer,ArrayList<Action>> SLS_algorithm(Topology topology, Agent agent, Task new_task, HashMap<Integer,ArrayList<Action>> passed_plan) {
@@ -232,7 +191,6 @@ public class AuctionTemplate_SLS implements AuctionBehavior {
     	long wrap_up_time = (long)(timeout_plan * 0.005); 
     	
     	plan = copyPlan(passed_plan); 
-    		
     	// get time of last action
     	
     	int last_time;
@@ -342,8 +300,6 @@ public class AuctionTemplate_SLS implements AuctionBehavior {
     	new_plan.get(smallest).add(new DeliveryAction(new_task,current_time[smallest], veh)); 
     	current_time[smallest]++; 
     		
-    	System.out.println("I was here! ");
-    	
     	return new_plan; 
     }
    

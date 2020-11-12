@@ -111,7 +111,9 @@ public class AuctionTemplate implements AuctionBehavior {
 
 	@Override
 	public void auctionResult(Task previous, int winner, Long[] bids) {
-
+		
+		System.out.println("\nAUCTION RESULT FOR AGENT: " + agent.id()); 
+		
 		if (winner == agent.id()) {
 			
 			old_plan = plan;
@@ -121,8 +123,9 @@ public class AuctionTemplate implements AuctionBehavior {
 		
 		}else{
 			
-			
 			opponents_tasks.add(previous); 
+			opponents_old_plan = opponents_plan; 
+			System.out.println("The Tasks the opponent won:" + opponents_tasks); 
 			System.out.println("Lost Bidding");
 			plan = copyPlan(old_plan);
 		}
@@ -161,7 +164,7 @@ public class AuctionTemplate implements AuctionBehavior {
 
 		System.out.println("\n\nThe Task: " + task.id + " with PickupCity: " + task.pickupCity + " and DeliveryCity " + task.deliveryCity +  " and Reward " + task.reward + "\n\n"); 
 		
-		System.out.println("Round: " + round_counter + " BID FOR AGENT:" + agent.id() + "\n\n");
+		System.out.println("Round: " + round_counter + " BID FOR AGENT: " + agent.id() + "\n\n");
 
 		if (this.won_tasks.size() == 0) {
 			
@@ -205,12 +208,14 @@ public class AuctionTemplate implements AuctionBehavior {
 			bid = 0.99 * opp_bid_estimate;
 		}
 		else {
-			bid = bid * (1.7 - marginal_offset(plan, topology, distribution));
+			
+			// Add a factor based on the Probability to get a Zero Margin Task based on the Number of Tasks we are currently delivering
+			if(round_counter > 5){
+				bid = bid * (1.7 - marginal_offset(plan, topology, distribution));
+			}
 		}
 	
 		System.out.println("Our Bid this round is: " + bid);
-		// System.out.println("Zero Margin Probability Estimate: " + marginal_offset(plan, topology, distribution)); 
-		
 		return (long) Math.round(bid);
 		
 	}
@@ -219,46 +224,14 @@ public class AuctionTemplate implements AuctionBehavior {
 	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
 		
-		for(Long bid : opponent_bids){ 
-			
-			System.out.println("The opponents bids: " + bid); 
-			
-		}
+		System.out.println("\n\nPARSING PLAN FOR AGENT: " + agent.id()); 
 		
 		System.out.println("The Tasks the opponent won: " + opponents_tasks); 
 		
 		print_plan(this.plan);
 		return parsePlan(this.plan, tasks);
 		
-	}
-
-	
-	private Plan naivePlan(Vehicle vehicle, Set<Task> tasks) {
-		City current = vehicle.getCurrentCity();
-		Plan plan = new Plan(current);
-
-		for (Task task : tasks) {
-			
-			// move: current city => pickup location
-			for (City city : current.pathTo(task.pickupCity))
-				plan.appendMove(city);
-
-			plan.appendPickup(task);
-
-			// move: pickup location => delivery location
-			for (City city : task.path())
-				plan.appendMove(city);
-
-			plan.appendDelivery(task);
-
-			// set current city
-			current = task.deliveryCity;
-			
-		}
-		
-		return plan;
-	}
-	
+	}	
 	
     private HashMap<Integer,ArrayList<Action>> SLS_algorithm(Topology topology, Agent agent, Task new_task, HashMap<Integer,ArrayList<Action>> passed_plan, boolean opponent) {
    	    
@@ -299,6 +272,7 @@ public class AuctionTemplate implements AuctionBehavior {
     	HashMap<Integer,ArrayList<Action>> plan_old;
     	HashSet<HashMap<Integer,ArrayList<Action>>> neighbors;
     	
+    
     	
     	// iterate 
     	
@@ -403,8 +377,6 @@ public class AuctionTemplate implements AuctionBehavior {
     	new_plan.get(smallest).add(new DeliveryAction(new_task,current_time[smallest], veh)); 
     	current_time[smallest]++; 
     		
-    	System.out.println("I was here! ");
-    	
     	return new_plan; 
     }
    
