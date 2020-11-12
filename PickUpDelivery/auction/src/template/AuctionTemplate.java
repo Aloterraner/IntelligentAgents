@@ -8,6 +8,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.*;
+import java.util.stream.IntStream;
+import java.util.Collections;
 
 import java.io.File;
 
@@ -71,11 +74,12 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.availableTasks = new HashSet<Task>(); 
 		this.opponents_tasks = new HashSet<Task>(); 
 		this.opponent_bids = new ArrayList<Long>(); 
+		this.estimated_opponent_bids = new ArrayList<Long>();
 		this.round_counter = 0; 
 		this.probabilty = 0.4; 
 		this.sls_iteration = 1500; 
 		this.opponent_city = new ArrayList<City>(); 
-		this.models = Arrays.asList("Average", "SLS");
+		this.models = Arrays.asList("Regression", "Median", "SLS");
 	
 		// the plan method cannot execute more than timeout_plan milliseconds+
 		
@@ -188,11 +192,18 @@ public class AuctionTemplate implements AuctionBehavior {
 		
 		System.out.println("Our Bid this round is: " + bid);
 		System.out.println("Zero Margin Probability Estimate: " + marginal_offset(plan, topology, distribution)); 
-		System.out.println("Estimated Opponent Bid: " + estimate_opponent_bid(task));  
 		
 		
+		long opp_bid_estimate = estimate_opponent_bid(task);
+		estimated_opponent_bids.add(opp_bid_estimate);
+		double cur_conf = get_confidence();
+		opp_bid_estimate *= cur_conf;
+			
+		System.out.println("Estimated Opponent Bid: " + estimate_opponent_bid(task) + ". Confidence: " + cur_conf);  
+			
 		// Estimate the costs for the opponent
-		
+
+	
 		
 		return (long) Math.round(bid);
 		
@@ -886,7 +897,7 @@ public class AuctionTemplate implements AuctionBehavior {
     }
     
    
-    private double estimate_opponent_bid(Task new_task) {
+    private long estimate_opponent_bid(Task new_task) {
 
     	double bid = 0.0;
     	double opponent_bid = 0.0;
@@ -913,37 +924,79 @@ public class AuctionTemplate implements AuctionBehavior {
     				opponent_bid = CalculateCost(opponents_plan, true) - CalculateCost(opponents_old_plan, true);
     			}
     			
+    			System.out.println("SLS estimate: " + opponent_bid);
     			bid = bid + ((1.0 / this.models.size()) * opponent_bid); // TODO: Check if all methods should have the same weighting factor
     
     		}
     		
     		else if (model == "Regression") {
-    			opponent_bid = 42; // TODO
+    			int size = 10;
+    			
+    			List<Long> x_values = Arrays.asList(1l, 2l, 3l, 4l, 5l, 6l, 7l, 8l, 9l, 10l);
+    			List<Long> y_values = opponent_bids.subList(Math.max(0, opponent_bids.size() - size), opponent_bids.size());
+    			
+    			double x_sum = 0;
+    			double y_sum = 0;
+    			
+    			for (int i=0; i < y_values.size(); i++) {
+    				x_sum += x_values.get(i);
+    				y_sum += y_values.get(i);
+    			}
+    			
+    			double x_mean = x_sum / x_values.size();
+    			double y_mean = y_sum / y_values.size();
+    			
+    			// y = m*x + b
+    			double nominator = 0.0;
+    			double denominator = 0.0;
+    			
+    			for (int i=0; i < y_values.size(); i++) {
+    				nominator += (x_values.get(i) - x_mean)  * (y_values.get(i) - y_mean);
+    				denominator += Math.pow((x_values.get(i) - x_mean), 2);
+    			}
+    			double slope = nominator / denominator; 
+    			double offset = y_mean - slope * x_mean;
+    			
+    			opponent_bid = slope * (Math.min(size, opponent_bids.size()) + 1) + offset;
+    			System.out.println("Regression estimate: " + opponent_bid);
     			bid = bid + ((1.0 / this.models.size()) * opponent_bid); // TODO: Check if all methods should have the same weighting factor
     		}
     		
     		else if (model == "Average") {
     			//opponent_bid = 0.0;
+    			int size = 10;
     			
-    			
-    			for(long last_bid : opponent_bids.subList(Math.max(0, opponent_bids.size() - 4), opponent_bids.size())) {
+    			for(long last_bid : opponent_bids.subList(Math.max(0, opponent_bids.size() - size), opponent_bids.size())) {
     				opponent_bid = opponent_bid + last_bid;
-    				
     			}
 
-    			opponent_bid = opponent_bid / Math.abs(Math.max(0, opponent_bids.size() - 4) - opponent_bids.size()); 
+    			opponent_bid = opponent_bid / Math.abs(Math.max(0, opponent_bids.size() - size) - opponent_bids.size()); 
+    			System.out.println("Average estimate: " + opponent_bid);
     			bid = bid + ((1.0 / this.models.size()) * opponent_bid); // TODO: Check if all methods should have the same weighting factor
     		}
     		
     		else if (model == "Median") {
     			//opponent_bid = 0.0;
+    			int size = 10;
+    			int median_idx = 0;
     			
-    			int start = Math.max(0, opponent_bids.size() - 4);
-    			int end = opponent_bids.size();
+    			if (opponent_bids.size() != 0) {
+    				int start = Math.max(0, opponent_bids.size() - size);
+        			int end = opponent_bids.size();
+        			List<Long> sorted_sublist = opponent_bids.subList(start, end);
+        			Collections.sort(sorted_sublist);
+        			median_idx = (int)(Math.floor(sorted_sublist.size() * 0.5));
+        			opponent_bid = opponent_bids.get(median_idx);
+        			
+    			}
+    			else {
+    				 
+    				median_idx = 0;
+    				opponent_bid = opponent_bids.get(median_idx);
+    			}
+   
     			
-    			List<Long> window = opponent_bids.subList(start, end);
-    			int median_idx = start + (int)(Math.floor(((end - 1) - start) * 0.5));
-    			opponent_bid = opponent_bids.get(median_idx);
+    			System.out.println("Median estimate: " + opponent_bid);
     			bid = bid + ((1.0 / this.models.size()) * opponent_bid); // TODO: Check if all methods should have the same weighting factor
     			
     		}
@@ -955,7 +1008,7 @@ public class AuctionTemplate implements AuctionBehavior {
     		
     	}
     	
-    	return bid;
+    	return (long)Math.floor(bid);
     	
     }
     
