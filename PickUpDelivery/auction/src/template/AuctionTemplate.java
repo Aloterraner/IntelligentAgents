@@ -129,7 +129,7 @@ public class AuctionTemplate implements AuctionBehavior {
 			won_tasks.add(previous); 
 			System.out.println("Won auction on Task " + previous);
 		
-		}else{
+		} else{
 			
 			opponents_tasks.add(previous); 
 			opponents_old_plan = opponents_plan; 
@@ -146,18 +146,14 @@ public class AuctionTemplate implements AuctionBehavior {
 			opponent_bids.add(bids[0]); 
 		}
 		
-		
-		System.out.println("The bids: ");
-		for (Long bid : bids) {
-			System.out.println("Bid: " + bid); 
-		}
-		
 		System.out.println("Our Plan:");
 		print_plan(plan);
 		System.out.println("Opponents Estimated Plan:");
 		print_plan(opponents_plan);
 
+		System.out.println("Opponents bids: " + this.opponent_bids);
 		weight_update();
+	
 		
 
 	}
@@ -238,6 +234,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		return parsePlan(this.plan, tasks);
 		
 	}	
+	
 	
     private HashMap<Integer,ArrayList<Action>> SLS_algorithm(Topology topology, Agent agent, Task new_task, HashMap<Integer,ArrayList<Action>> passed_plan, boolean opponent) {
    	    
@@ -775,6 +772,7 @@ public class AuctionTemplate implements AuctionBehavior {
     	
     }
     
+    
     private boolean verify_constraint(HashMap<Integer,ArrayList<Action>> plan) {
     	/*
     	 * Checks if the passed satisfies the constraints defined in the CSP.
@@ -908,7 +906,7 @@ public class AuctionTemplate implements AuctionBehavior {
     				opponent_bid = CalculateCost(opponents_plan, true) - CalculateCost(opponents_old_plan, true);
     			}
     			
-    			System.out.println("SLS estimate: " + opponent_bid);
+    			System.out.println("SLS estimate: " + opponent_bid + " with weight: " + this.weights.get(model));
     
     		}
     		
@@ -941,7 +939,7 @@ public class AuctionTemplate implements AuctionBehavior {
     			double offset = y_mean - slope * x_mean;
     			
     			opponent_bid = slope * (Math.min(size, opponent_bids.size()) + 1) + offset;
-    			System.out.println("Regression estimate: " + opponent_bid);
+    			System.out.println("Regression estimate: " + opponent_bid + " with weight: " + this.weights.get(model));
     		}
     		
     		else if (model == "Average") {
@@ -953,7 +951,7 @@ public class AuctionTemplate implements AuctionBehavior {
     			}
 
     			opponent_bid = opponent_bid / Math.abs(Math.max(0, opponent_bids.size() - size) - opponent_bids.size()); 
-    			System.out.println("Average estimate: " + opponent_bid);
+    			System.out.println("Average estimate: " + opponent_bid + " with weight: " + this.weights.get(model));
     		}
     		
     		else if (model == "Median") {
@@ -976,7 +974,7 @@ public class AuctionTemplate implements AuctionBehavior {
     				opponent_bid = 0;
     			}
     			
-    			System.out.println("Median estimate: " + opponent_bid);
+    			System.out.println("Median estimate: " + opponent_bid + "with weight: " + this.weights.get(model));
     		}
     		
     		else {
@@ -1001,22 +999,36 @@ public class AuctionTemplate implements AuctionBehavior {
     private void weight_update() {
     	
     	if (this.round_counter > 1) {
-    	
-	    	double MSE = 0;
 	    	
+    		double MSE_sum = 0.0;
+    		
+    		// Compute MSE of the different models
 	    	for (String model: this.models) {
+	    		double MSE = 0.0;
+		    	
 	    		for (int i = 0; i < this.estimated_opponent_bids.get(model).size(); i++) {
 	    			MSE += Math.pow(this.estimated_opponent_bids.get(model).get(i) - this.opponent_bids.get(i + 1), 2);
 	    		}
-	    		// MSE of current model
+	    		
 	    		MSE /= this.estimated_opponent_bids.get(model).size();
-	    		// TODO: formulate update rule based on MSE
-	    		//this.weights.get(model) =  
+	    		MSE_sum += MSE;
+	    		this.weights.put(model, MSE); // set weight to absoulte MSE for now
+	    	}
+	  
+	    	// Adjust weight according to the models MSE
+	    	double error_rate;
+	    	double error_sum = 0.0;
+	    	for (String model: this.models) {
+	    		error_rate = this.weights.get(model) / MSE_sum; // error rate
+	    		this.weights.put(model, (1 - error_rate)); // success rate, not normalized
+	    		error_sum += this.weights.get(model);
+	    	}
+	    	// normalize success rate
+	    	for (String model: this.models) {
+	    		this.weights.put(model, this.weights.get(model) / error_sum);
 	    	}
     	}
-    	else {
-    		
-    	}
+    	
     	
     }
    /* private double get_confidence() {
