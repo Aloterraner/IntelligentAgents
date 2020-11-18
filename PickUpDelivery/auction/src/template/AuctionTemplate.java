@@ -1031,6 +1031,9 @@ public class AuctionTemplate implements AuctionBehavior {
     	
     	
     }
+    
+    
+    
    /* private double get_confidence() {
     	
     	double mean_error = 0;

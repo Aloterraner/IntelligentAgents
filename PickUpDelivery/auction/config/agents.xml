@@ -6,7 +6,7 @@
 	<!-- #### AUCTION AGENTS ### -->
 	<agent name="auction-random">
 		<set class-path="bin/"/>
-		<set class-name="template.AuctionTemplate_Naive"/>
+		<set class-name="template.AuctionTemplate_Naive"></set>
 	</agent>
 
 	<agent name="auction-SLS">
@@ -17,6 +17,11 @@
 	<agent name="auction-SLS-Naive">
 		<set class-path="bin/"/>
 		<set class-name="template.AuctionTemplate_SLS"/>
+	</agent>
+
+	<agent name="auction-SLS-Average">
+		<set class-path="bin/"/>
+		<set class-name="template.AuctionTemplate_Average"/>
 	</agent>
 	
 </agents>
