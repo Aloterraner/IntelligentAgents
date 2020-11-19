@@ -365,6 +365,18 @@ public class AuctionTemplate_SLS implements AuctionBehavior {
     	}
     	
     	System.out.println("Time needed to Parse the Plan: " + (System.currentTimeMillis()- time_start) + " milliseconds");
+    	
+    	// Catches a case were we would return a non-epmtpy plan if we don't win any Task
+    	if(won_tasks.isEmpty()) {
+    		result =  new ArrayList<Plan>();
+    		
+    		for(Vehicle veh : agent.vehicles()) {
+    			result.add(new Plan(veh.getCurrentCity())); 
+    		}
+    		
+    	}
+    	
+    	
     	return result; 
     }
     

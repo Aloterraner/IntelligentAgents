@@ -218,6 +218,13 @@ public class AuctionTemplate implements AuctionBehavior {
 		}
 	
 		System.out.println("Our Bid this round is: " + bid);
+		// Catch a Negative Bid estimate for the Opponent by bidding a small fixed amount
+		// He can get the task if he is willing to bid possibly negative, never prevent your Opponent from making a mistake. 
+		
+		if( bid < 0 ) {
+			bid = 100; 	
+		}
+		
 		return (long) Math.round(bid);
 		
 	}
@@ -442,6 +449,16 @@ public class AuctionTemplate implements AuctionBehavior {
     		}
     		
 			result.add(plan); 
+    	}
+    	
+    	// Catches a case were we would return a non-epmtpy plan if we don't win any Task
+    	if(won_tasks.isEmpty()) {
+    		result =  new ArrayList<Plan>();
+    		
+    		for(Vehicle veh : agent.vehicles()) {
+    			result.add(new Plan(veh.getCurrentCity())); 
+    		}
+    		
     	}
     	
     	System.out.println("Time needed to Parse the Plan: " + (System.currentTimeMillis()- time_start) + " milliseconds");
